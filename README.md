@@ -1,6 +1,10 @@
-![Banner](https://capsule-render.vercel.app/api?type=waving&color=0:6f42c1,100:0d6efd&height=200&section=header&text=Smart%20Task%20Management%20System&fontSize=30&fontColor=ffffff)
-
 # 🚀 Smart Task Management System
+
+<img src="https://img.shields.io/badge/Authentication-Identity-blue?style=for-the-badge" />
+<img src="https://img.shields.io/badge/AJAX-Dynamic_UI-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Architecture-MVC-success?style=for-the-badge" />
+
+---
 
 > A modern, user-based task management system built with ASP.NET Core MVC, featuring audit logging, dynamic UI, and smart task handling.
 
