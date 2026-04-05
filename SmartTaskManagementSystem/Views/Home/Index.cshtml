@@ -1,0 +1,734 @@
+﻿@{
+    // Sets the page title and uses the custom public home layout
+    ViewData["Title"] = "Smart Task Management";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+}
+
+<style>
+    /* Main wrapper for the home page background effects */
+    .home-page {
+        position: relative;
+        overflow: hidden;
+    }
+
+        /* Decorative blurred background shapes */
+        .home-page::before,
+        .home-page::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .home-page::before {
+            width: 280px;
+            height: 280px;
+            top: 40px;
+            left: -80px;
+            background: #6f42c1;
+        }
+
+        .home-page::after {
+            width: 320px;
+            height: 320px;
+            right: -100px;
+            top: 120px;
+            background: #0d6efd;
+        }
+
+        /* Keeps page content above background decorations */
+        .home-page > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    /* Hero section styling */
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+        border-radius: 32px;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 58%, #20c997 100%);
+        color: #fff;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+    }
+
+        /* Decorative circles inside the hero section */
+        .hero-section::before,
+        .hero-section::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.10);
+        }
+
+        .hero-section::before {
+            width: 220px;
+            height: 220px;
+            right: -50px;
+            top: -50px;
+        }
+
+        .hero-section::after {
+            width: 160px;
+            height: 160px;
+            left: -35px;
+            bottom: -35px;
+        }
+
+    /* Ensures hero content stays above decorative elements */
+    .hero-content,
+    .hero-preview {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Hero badge style */
+    .hero-badge {
+        background: rgba(255,255,255,0.16);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.24);
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    /* Main hero title */
+    .hero-title {
+        font-size: clamp(2.1rem, 4vw, 3.5rem);
+        line-height: 1.1;
+        font-weight: 800;
+        margin-bottom: 1rem;
+    }
+
+    /* Hero supporting text */
+    .hero-text {
+        max-width: 620px;
+        color: rgba(255,255,255,0.88);
+        font-size: 1.04rem;
+        line-height: 1.75;
+    }
+
+    /* Hero call-to-action buttons */
+    .hero-actions .btn {
+        min-width: 170px;
+        min-height: 52px;
+        border-radius: 16px;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for hero buttons */
+        .hero-actions .btn:hover {
+            transform: translateY(-2px);
+        }
+
+    /* Small feature stat boxes below hero text */
+    .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 2rem;
+    }
+
+    /* Individual stat box styling */
+    .stat-box {
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 18px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+        .stat-box strong {
+            font-size: 1.1rem;
+        }
+
+        .stat-box span {
+            color: rgba(255,255,255,0.88);
+            font-size: 0.94rem;
+        }
+
+    /* Right-side preview card inside hero */
+    .hero-preview-card {
+        background: rgba(255,255,255,0.94);
+        color: #111827;
+        border-radius: 26px;
+        padding: 1.4rem;
+        box-shadow: 0 22px 48px rgba(15, 23, 42, 0.18);
+        max-width: 430px;
+        margin-left: auto;
+    }
+
+    /* Topbar inside preview card */
+    .preview-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    /* Small decorative dots in the preview topbar */
+    .preview-dot-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    .preview-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #d1d5db;
+    }
+
+    /* Preview label text */
+    .preview-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    /* Summary boxes inside the preview card */
+    .preview-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .preview-summary-box {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 18px;
+        padding: 0.95rem;
+        text-align: center;
+    }
+
+        .preview-summary-box .small-title {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .preview-summary-box .big-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+    /* Small task card shown in the live preview */
+    .preview-task-card {
+        border: 1px solid #eef1f6;
+        border-radius: 18px;
+        padding: 1rem;
+        background: #fff;
+        margin-bottom: 0.85rem;
+    }
+
+        .preview-task-card:last-child {
+            margin-bottom: 0;
+        }
+
+    /* Header area of each preview task */
+    .preview-task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 12px;
+        margin-bottom: 0.6rem;
+    }
+
+    /* Preview task title */
+    .preview-task-title {
+        font-weight: 700;
+        color: #111827;
+        font-size: 0.97rem;
+    }
+
+    /* Preview task description */
+    .preview-task-desc {
+        color: #6b7280;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    /* Chips row inside preview cards */
+    .preview-chip-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 0.7rem;
+    }
+
+    /* Shared chip styling */
+    .preview-chip {
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    /* Shared section heading wrapper */
+    .section-head {
+        max-width: 680px;
+        margin: 0 auto 2.2rem;
+        text-align: center;
+    }
+
+        .section-head h2 {
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            color: #111827;
+        }
+
+        .section-head p {
+            color: #6b7280;
+            margin-bottom: 0;
+            line-height: 1.7;
+        }
+
+    /* Feature card style */
+    .feature-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 24px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+        transition: all 0.25s ease;
+    }
+
+        /* Hover effect for feature cards */
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 42px rgba(15, 23, 42, 0.09);
+        }
+
+    /* Feature icon container */
+    .feature-icon {
+        width: 62px;
+        height: 62px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+    }
+
+    /* Section card for the "How it works" area */
+    .how-section {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 28px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Individual step box */
+    .step-box {
+        background: #fff;
+        border: 1px solid #eef1f6;
+        border-radius: 24px;
+        padding: 1.4rem 1rem;
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for step boxes */
+        .step-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+
+    /* Step number badge */
+    .step-number {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #fff;
+        background: linear-gradient(135deg, #6f42c1, #0d6efd);
+    }
+
+    /* Smart feature cards */
+    .smart-section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 26px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+        height: 100%;
+    }
+
+    /* Small inline badge used in several sections */
+    .smart-mini-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 7px 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #374151;
+    }
+
+    /* Final call-to-action section */
+    .cta-section {
+        border-radius: 32px;
+        background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+    }
+
+        /* CTA button styling */
+        .cta-section .btn {
+            min-width: 190px;
+            min-height: 52px;
+            border-radius: 16px;
+            font-weight: 700;
+        }
+
+    /* Privacy / trust information card */
+    .privacy-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 24px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Tablet layout adjustments */
+    @@media (max-width: 991.98px) {
+        .hero-section {
+            padding: 2.5rem 1.4rem;
+        }
+
+        .hero-preview-card {
+            max-width: 100%;
+            margin-left: 0;
+        }
+    }
+
+    /* Mobile layout adjustments */
+    @@media (max-width: 767.98px) {
+        .hero-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .preview-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+        }
+
+            .hero-actions .btn {
+                width: 100%;
+            }
+
+        .cta-section .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container py-5 home-page">
+
+    <!-- Hero section -->
+    <section class="hero-section mb-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7 hero-content">
+                <span class="badge hero-badge rounded-pill px-3 py-2 mb-3">
+                    Smart Productivity Platform
+                </span>
+
+                <h1 class="hero-title">
+                    Manage Tasks Smarter,<br />
+                    Stay Focused Longer
+                </h1>
+
+                <p class="hero-text mb-4">
+                    Smart Task Management helps you organize your work with tasks, categories,
+                    progress tracking, activity history, and a clean dashboard experience.
+                    It is designed for people who want a simple interface with powerful control.
+                </p>
+
+                <!-- Primary hero actions -->
+                <div class="d-flex gap-3 flex-wrap hero-actions">
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-light text-dark shadow-sm">
+                        <i class="bi bi-person-plus me-2"></i>Get Started
+                    </a>
+
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-light">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </a>
+                </div>
+
+                <!-- Hero feature highlights -->
+                <div class="hero-stats">
+                    <div class="stat-box">
+                        <strong>✔ Task Tracking</strong>
+                        <span>Create, update, and organize daily work easily.</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>✔ Smart Categories</strong>
+                        <span>Use color-based categories for faster organization.</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>✔ Real-Time Dashboard</strong>
+                        <span>See progress, risks, and recent activity in one place.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero live preview card -->
+            <div class="col-lg-5 hero-preview">
+                <div class="hero-preview-card">
+                    <div class="preview-topbar">
+                        <div class="preview-dot-group">
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+                        </div>
+                        <span class="preview-label">LIVE PREVIEW</span>
+                    </div>
+
+                    <div class="preview-summary">
+                        <div class="preview-summary-box">
+                            <div class="small-title">Tasks</div>
+                            <div class="big-value">18</div>
+                        </div>
+                        <div class="preview-summary-box">
+                            <div class="small-title">Completed</div>
+                            <div class="big-value">11</div>
+                        </div>
+                        <div class="preview-summary-box">
+                            <div class="small-title">Near Deadline</div>
+                            <div class="big-value">3</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-task-card">
+                        <div class="preview-task-header">
+                            <div class="preview-task-title">Prepare project presentation</div>
+                            <span class="preview-chip bg-danger-subtle text-danger">High</span>
+                        </div>
+                        <div class="preview-task-desc">
+                            Important presentation for this week with deadline awareness and status tracking.
+                        </div>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip bg-light text-dark">Work</span>
+                            <span class="preview-chip bg-warning text-dark">Due Soon</span>
+                        </div>
+                    </div>
+
+                    <div class="preview-task-card">
+                        <div class="preview-task-header">
+                            <div class="preview-task-title">Complete SQL practice</div>
+                            <span class="preview-chip bg-warning-subtle text-warning">Medium</span>
+                        </div>
+                        <div class="preview-task-desc">
+                            Study-focused task with category organization and productivity tracking.
+                        </div>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip bg-success-subtle text-success">Study</span>
+                            <span class="preview-chip bg-primary-subtle text-primary">In Progress</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features section -->
+    <section class="mb-5" id="features">
+        <div class="section-head">
+            <h2>Everything you need to manage tasks clearly</h2>
+            <p>
+                The system is built to keep task management simple for daily use while still giving
+                you the structure of a professional productivity platform.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <div class="feature-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-list-task"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Task Management</h5>
+                    <p class="text-muted small mb-0">
+                        Create, update, prioritize, and track tasks with deadlines and clean editing experience.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <div class="feature-icon bg-success-subtle text-success">
+                        <i class="bi bi-bar-chart-line"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Dashboard Analytics</h5>
+                    <p class="text-muted small mb-0">
+                        Monitor completion rate, upcoming deadlines, high-priority tasks, and activity history.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <div class="feature-icon bg-warning-subtle text-warning">
+                        <i class="bi bi-tags"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Smart Categories</h5>
+                    <p class="text-muted small mb-0">
+                        Organize tasks with color-based categories and filter work faster with a clearer visual system.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Smart system section -->
+    <section class="mb-5">
+        <div class="section-head">
+            <h2>Simple smart support, not complicated automation</h2>
+            <p>
+                This system keeps the smart features lightweight and useful instead of making the interface noisy.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="smart-section-card p-4">
+                    <div class="smart-mini-badge mb-3">
+                        <i class="bi bi-lightning-charge"></i>
+                        Priority Suggestion
+                    </div>
+                    <h5 class="fw-bold">Task title based guidance</h5>
+                    <p class="text-muted small mb-0">
+                        Keywords like exam, deadline, meeting, or shopping can help the system suggest a reasonable priority.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="smart-section-card p-4">
+                    <div class="smart-mini-badge mb-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Deadline Awareness
+                    </div>
+                    <h5 class="fw-bold">Risk visibility</h5>
+                    <p class="text-muted small mb-0">
+                        Overdue and due-soon tasks can be highlighted so users can spot what needs attention quickly.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="smart-section-card p-4">
+                    <div class="smart-mini-badge mb-3">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Productivity Insight
+                    </div>
+                    <h5 class="fw-bold">Useful dashboard comments</h5>
+                    <p class="text-muted small mb-0">
+                        The dashboard can show simple insight messages such as deadline risk and the most used category.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works section -->
+    <section class="how-section p-5 mb-5" id="how-it-works">
+        <div class="section-head mb-4">
+            <h2>How it works</h2>
+            <p>Simple steps to start organizing your workflow in a cleaner way.</p>
+        </div>
+
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <h6 class="fw-bold mt-3">Create Tasks</h6>
+                    <p class="text-muted small mb-0">
+                        Add your daily tasks with due dates, status, and priority.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <h6 class="fw-bold mt-3">Organize Clearly</h6>
+                    <p class="text-muted small mb-0">
+                        Group tasks with categories and use filters to keep everything readable.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <h6 class="fw-bold mt-3">Track Progress</h6>
+                    <p class="text-muted small mb-0">
+                        Monitor completion, priorities, activity, and deadline pressure on the dashboard.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Privacy and trust section -->
+    <section class="mb-5">
+        <div class="privacy-card p-4 p-lg-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-8">
+                    <h3 class="fw-bold mb-2">A clean system built for trust and control</h3>
+                    <p class="text-muted mb-0">
+                        Smart Task Management is designed to keep task ownership user-based, improve visibility,
+                        and make management more structured with authentication, category organization,
+                        audit-friendly updates, and dashboard-based tracking.
+                    </p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="d-flex flex-column gap-2">
+                        <span class="smart-mini-badge"><i class="bi bi-shield-check"></i>User-Based Data</span>
+                        <span class="smart-mini-badge"><i class="bi bi-lock"></i>Secure Login Flow</span>
+                        <span class="smart-mini-badge"><i class="bi bi-clock-history"></i>Activity Awareness</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final call-to-action section -->
+    <section class="cta-section text-center p-5" id="cta">
+        <h3 class="fw-bold mb-3 text-white">Start managing your tasks today</h3>
+        <p class="mb-4 text-light">
+            Clean interface, smart structure, and a dashboard that helps you focus on what matters.
+        </p>
+
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a asp-area="Identity" asp-page="/Account/Register"
+               class="btn btn-light text-dark px-5 py-2 shadow-sm">
+                Create Account
+            </a>
+
+            <a asp-area="Identity" asp-page="/Account/Login"
+               class="btn btn-outline-light px-5 py-2">
+                Login
+            </a>
+        </div>
+    </section>
+</div>

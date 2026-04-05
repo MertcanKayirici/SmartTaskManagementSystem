@@ -1,0 +1,254 @@
+﻿@page
+@using SmartTaskManagementSystem.Areas.Identity.Pages.Account.Manage
+// Imports Manage namespace for navigation helpers (e.g., ManageNavPages)
+
+@model SmartTaskManagementSystem.Areas.Identity.Pages.Account.Manage.IndexModel
+// Binds the Razor Page to IndexModel (code-behind)
+
+@{
+    // Page title displayed in browser tab
+    ViewData["Title"] = "Profile";
+
+    // Sets the active navigation item in sidebar
+    ViewData["ActivePage"] = ManageNavPages.Index;
+}
+
+<style>
+    /* Layout grid: sidebar + main content */
+    .manage-page-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    /* Shared card design */
+    .manage-side-card,
+    .manage-main-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 28px;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+    }
+
+    /* Sidebar card (sticky on desktop) */
+    .manage-side-card {
+        padding: 28px 24px;
+        position: sticky;
+        top: 24px;
+    }
+
+    /* Main content card */
+    .manage-main-card {
+        padding: 32px;
+    }
+
+    /* Icon container */
+    .manage-icon-box {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+        margin-bottom: 18px;
+    }
+
+    /* Section title */
+    .manage-card-title {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    /* Description text */
+    .manage-note {
+        color: #6b7280;
+        line-height: 1.7;
+    }
+
+    /* Sidebar tips container */
+    .manage-side-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    /* Sidebar item */
+    .manage-side-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid #eef1f6;
+        color: #4b5563;
+    }
+
+    /* Top info strip */
+    .manage-top-strip {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border: 1px solid #eef1f6;
+        border-radius: 18px;
+        background: #ffffff;
+        margin-bottom: 24px;
+    }
+
+    /* Label text */
+    .manage-info-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Value text */
+    .manage-info-value {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    /* Badge styling */
+    .manage-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-weight: 700;
+    }
+
+    /* Input styling */
+    .form-floating > .form-control {
+        border-radius: 18px;
+        min-height: 58px;
+    }
+
+    /* Primary button */
+    .manage-btn {
+        min-height: 54px;
+        border-radius: 16px;
+        font-weight: 700;
+    }
+
+    /* Helper box */
+    .manage-helper-box {
+        margin-top: 22px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid #eef1f6;
+    }
+
+    /* Responsive layout */
+    @@media (max-width: 991.98px) {
+        .manage-page-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .manage-side-card {
+            position: static;
+        }
+    }
+</style>
+
+<!-- Displays success or error messages -->
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div class="manage-page-grid">
+
+    <!-- SIDEBAR: Profile info and tips -->
+    <div class="manage-side-card">
+        <div class="manage-icon-box">
+            <i class="bi bi-person"></i>
+        </div>
+
+        <!-- Section title -->
+        <h2 class="manage-card-title">Profile</h2>
+
+        <!-- Description -->
+        <p class="manage-note">
+            Review your account details and update available profile information.
+        </p>
+
+        <!-- Informational tips -->
+        <div class="manage-side-list">
+            <div class="manage-side-item">
+                <i class="bi bi-person-check text-success"></i>
+                <span>Your username is shown here as your current account identity.</span>
+            </div>
+            <div class="manage-side-item">
+                <i class="bi bi-telephone text-primary"></i>
+                <span>You can update your phone number from this page whenever needed.</span>
+            </div>
+            <div class="manage-side-item">
+                <i class="bi bi-shield-check text-warning"></i>
+                <span>Keeping profile information current helps maintain a better account setup.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT: Profile form -->
+    <div class="manage-main-card">
+
+        <!-- Current account info -->
+        <div class="manage-top-strip">
+            <div>
+                <div class="manage-info-label">Current account</div>
+                <div class="manage-info-value">@Model.Username</div>
+            </div>
+
+            <!-- Status badge -->
+            <div class="manage-badge">
+                <i class="bi bi-person-check"></i>
+                Account Active
+            </div>
+        </div>
+
+        <!-- Profile update form -->
+        <form id="profile-form" method="post" novalidate>
+
+            <!-- Validation summary -->
+            <div asp-validation-summary="ModelOnly"
+                 class="alert alert-danger rounded-4 border-0 shadow-sm mb-4"></div>
+
+            <!-- Username (readonly) -->
+            <div class="form-floating mb-3">
+                <input asp-for="Username" class="form-control" disabled />
+                <label asp-for="Username">Username</label>
+            </div>
+
+            <!-- Phone number input -->
+            <div class="form-floating mb-3">
+                <input asp-for="Input.PhoneNumber" class="form-control" />
+                <label asp-for="Input.PhoneNumber">Phone Number</label>
+                <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
+            </div>
+
+            <!-- Submit button -->
+            <button id="update-profile-button" type="submit" class="btn btn-dark manage-btn w-100">
+                Save Changes
+            </button>
+        </form>
+
+        <!-- Helper note -->
+        <div class="manage-helper-box">
+            <div class="manage-helper-title">Quick note</div>
+            <p class="manage-helper-text">
+                Your username is currently read-only on this page. You can update available profile information here.
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Enables client-side validation -->
+    <partial name="_ValidationScriptsPartial" />
+}

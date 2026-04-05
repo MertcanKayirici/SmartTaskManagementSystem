@@ -1,0 +1,18 @@
+﻿@model string
+
+// Check if the message is not null, empty, or whitespace
+@if (!string.IsNullOrWhiteSpace(Model))
+{
+    // Determine if the message represents an error (starts with "Error")
+    var isError = Model.StartsWith("Error", StringComparison.OrdinalIgnoreCase);
+
+    // Assign appropriate CSS class based on message type (error or success)
+    var cssClass = isError
+        ? "alert alert-danger manage-alert"   // Error message styling
+        : "alert alert-success manage-alert"; // Success message styling
+
+    // Render alert box with dynamic message content
+    <div class="@cssClass" role="alert">
+        @Model
+    </div>
+}

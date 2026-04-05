@@ -1,0 +1,399 @@
+﻿@model SmartTaskManagementSystem.Models.TaskItem
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    // Sets the page title for the edit task view
+    ViewData["Title"] = "Edit Task";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+        <!-- Page header section -->
+        <div class="mb-4 text-center">
+            <span class="badge rounded-pill text-bg-dark px-3 py-2 mb-3">Task Management</span>
+            <h1 class="fw-bold display-6 mb-2">Edit Task</h1>
+            <p class="text-muted mb-0">
+                Update your task details with a clean and organized editing experience.
+            </p>
+        </div>
+
+        <!-- Main form card -->
+        <div class="card border-0 shadow-lg rounded-4 task-form-card overflow-hidden">
+            <!-- Decorative top gradient bar -->
+            <div class="task-form-topbar"></div>
+
+            <div class="card-body p-4 p-lg-5">
+                <!-- Task edit form -->
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Hidden field used to preserve the task ID -->
+                    <input type="hidden" asp-for="Id" />
+
+                    <!-- Validation summary for model-level errors -->
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-4"></div>
+
+                    <div class="row g-4 align-items-start">
+                        <div class="col-lg-7">
+                            <!-- Lightweight AI hint message -->
+                            <div class="mb-3">
+                                <div class="alert alert-light border rounded-4 mb-0">
+                                    <strong>Simple AI Hint:</strong> Titles like
+                                    <em>exam</em>, <em>deadline</em>, <em>meeting</em>, or <em>shopping</em>
+                                    can guide priority suggestion.
+                                </div>
+                            </div>
+
+                            <!-- Task title input -->
+                            <div class="mb-4">
+                                <label asp-for="Title" class="form-label fw-semibold">Task Title</label>
+                                <input asp-for="Title"
+                                       class="form-control form-control-lg rounded-4 shadow-sm"
+                                       placeholder="Example: Finish report, Study database, Update dashboard" />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Task description input -->
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                                <textarea asp-for="Description"
+                                          class="form-control rounded-4 shadow-sm"
+                                          rows="5"
+                                          placeholder="Write a short description about this task"></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Task metadata fields -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="DueDate" class="form-label fw-semibold">Due Date</label>
+                                    <input asp-for="DueDate"
+                                           type="date"
+                                           class="form-control rounded-4 shadow-sm" />
+                                    <span asp-validation-for="DueDate" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="CategoryId" class="form-label fw-semibold">Category</label>
+                                    <select asp-for="CategoryId"
+                                            asp-items="ViewBag.CategoryId"
+                                            class="form-select rounded-4 shadow-sm">
+                                        <option value="">Select category</option>
+                                    </select>
+                                    <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="Priority" class="form-label fw-semibold">Priority</label>
+                                    <select asp-for="Priority"
+                                            class="form-select rounded-4 shadow-sm"
+                                            id="prioritySelect">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
+                                    </select>
+                                    <span asp-validation-for="Priority" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="Status" class="form-label fw-semibold">Status</label>
+                                    <select asp-for="Status"
+                                            class="form-select rounded-4 shadow-sm"
+                                            id="statusSelect">
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live preview panel -->
+                        <div class="col-lg-5">
+                            <div class="preview-panel rounded-4 shadow-sm p-4">
+                                <p class="text-uppercase text-muted small fw-bold mb-3">Live Preview</p>
+
+                                <div class="preview-card rounded-4 p-4 text-center">
+                                    <!-- Dynamic task icon -->
+                                    <div class="preview-icon-wrap mx-auto mb-3" id="previewIconWrap">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </div>
+
+                                    <!-- Preview title -->
+                                    <h5 class="fw-bold mb-2" id="previewTitle">
+                                        @(string.IsNullOrWhiteSpace(Model?.Title) ? "Task Title" : Model.Title)
+                                    </h5>
+
+                                    <!-- Preview description -->
+                                    <p class="text-muted small mb-3 preview-description" id="previewDescription">
+                                        @(string.IsNullOrWhiteSpace(Model?.Description) ? "Task description preview will appear here." : Model.Description)
+                                    </p>
+
+                                    <!-- Preview badges -->
+                                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                                        <span class="badge rounded-pill px-3 py-2" id="previewPriorityBadge">
+                                            @(string.IsNullOrWhiteSpace(Model?.Priority) ? "Priority" : Model.Priority)
+                                        </span>
+
+                                        <span class="badge rounded-pill px-3 py-2" id="previewStatusBadge">
+                                            @(string.IsNullOrWhiteSpace(Model?.Status) ? "Status" : Model.Status)
+                                        </span>
+                                    </div>
+
+                                    <!-- Preview due date -->
+                                    <div class="small text-muted mb-2">
+                                        <strong>Due Date:</strong>
+                                        <span id="previewDueDate">
+                                            @(Model?.DueDate != null ? Model.DueDate.ToString("dd MMM yyyy") : "-")
+                                        </span>
+                                    </div>
+
+                                    <!-- Preview category -->
+                                    <div class="small text-muted">
+                                        <strong>Category:</strong>
+                                        <span id="previewCategory">
+                                            @{
+                                                // Resolves the selected category text from the dropdown items
+                                                var selectedCategoryText = "No Category";
+                                                if (ViewBag.CategoryId != null)
+                                                {
+                                                    foreach (var item in (IEnumerable<SelectListItem>)ViewBag.CategoryId)
+                                                    {
+                                                        if (item.Value == Model?.CategoryId?.ToString())
+                                                        {
+                                                            selectedCategoryText = item.Text;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            @selectedCategoryText
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form action buttons -->
+                    <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-4 px-4 py-2">
+                            Back to List
+                        </a>
+
+                        <button type="submit" class="btn btn-dark rounded-4 px-4 py-2 shadow-sm">
+                            Update Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Glassmorphism card background */
+    .task-form-card {
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Decorative top gradient line */
+    .task-form-topbar {
+        height: 8px;
+        background: linear-gradient(90deg, #6f42c1, #0d6efd, #20c997);
+    }
+
+    /* Shared input styling */
+    .form-control,
+    .form-select {
+        border: 1px solid #e5e7eb;
+    }
+
+        /* Focus state for form controls */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.12);
+        }
+
+    /* Preview panel styling */
+    .preview-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+    }
+
+    /* Preview card layout */
+    .preview-card {
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: radial-gradient(circle at top right, rgba(111, 66, 193, 0.08), transparent 35%), linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+        border: 1px dashed #dbe3f0;
+    }
+
+    /* Preview icon container */
+    .preview-icon-wrap {
+        width: 78px;
+        height: 78px;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #fff;
+        background: linear-gradient(135deg, #6f42c1, #0d6efd);
+        box-shadow: 0 12px 28px rgba(13, 110, 253, 0.22);
+    }
+
+    /* Preview description area */
+    .preview-description {
+        min-height: 42px;
+        max-width: 320px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Shared badge font weight */
+    #previewPriorityBadge,
+    #previewStatusBadge {
+        font-weight: 600;
+    }
+
+    /* Responsive preview card height adjustment */
+    @@media (max-width: 991.98px) {
+        .preview-card {
+            min-height: auto;
+        }
+    }
+</style>
+
+@section Scripts {
+    @{
+        // Loads built-in client-side validation scripts
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Initializes live preview behavior after the DOM is loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            // Form field references
+            const titleInput = document.getElementById("Title");
+            const descriptionInput = document.getElementById("Description");
+            const dueDateInput = document.getElementById("DueDate");
+            const categorySelect = document.getElementById("CategoryId");
+            const prioritySelect = document.getElementById("prioritySelect");
+            const statusSelect = document.getElementById("statusSelect");
+
+            // Preview element references
+            const previewTitle = document.getElementById("previewTitle");
+            const previewDescription = document.getElementById("previewDescription");
+            const previewDueDate = document.getElementById("previewDueDate");
+            const previewCategory = document.getElementById("previewCategory");
+            const previewPriorityBadge = document.getElementById("previewPriorityBadge");
+            const previewStatusBadge = document.getElementById("previewStatusBadge");
+            const previewIconWrap = document.getElementById("previewIconWrap");
+
+            // Formats the selected date for human-readable preview output
+            function formatDate(dateValue) {
+                if (!dateValue) return "-";
+
+                const date = new Date(dateValue);
+                if (isNaN(date.getTime())) return "-";
+
+                return date.toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                });
+            }
+
+            // Returns the CSS class for the selected priority
+            function getPriorityClass(priority) {
+                if (priority === "High") {
+                    return "badge rounded-pill px-3 py-2 bg-danger-subtle text-danger";
+                }
+                if (priority === "Medium") {
+                    return "badge rounded-pill px-3 py-2 bg-warning-subtle text-warning";
+                }
+                return "badge rounded-pill px-3 py-2 bg-success-subtle text-success";
+            }
+
+            // Returns the CSS class for the selected status
+            function getStatusClass(status) {
+                if (status === "Completed") {
+                    return "badge rounded-pill px-3 py-2 bg-success-subtle text-success";
+                }
+                if (status === "In Progress") {
+                    return "badge rounded-pill px-3 py-2 bg-primary-subtle text-primary";
+                }
+                return "badge rounded-pill px-3 py-2 bg-secondary-subtle text-secondary";
+            }
+
+            // Returns the icon gradient background based on task status
+            function getIconBackground(status) {
+                if (status === "Completed") {
+                    return "linear-gradient(135deg, #198754, #20c997)";
+                }
+                if (status === "In Progress") {
+                    return "linear-gradient(135deg, #0d6efd, #6f42c1)";
+                }
+                return "linear-gradient(135deg, #6c757d, #495057)";
+            }
+
+            // Applies simple keyword-based AI priority suggestion
+            function applySimpleAiHint() {
+                const val = titleInput.value.toLowerCase();
+
+                if (val.includes("exam") || val.includes("deadline") || val.includes("urgent") || val.includes("presentation")) {
+                    prioritySelect.value = "High";
+                } else if (val.includes("meeting") || val.includes("project") || val.includes("report")) {
+                    prioritySelect.value = "Medium";
+                } else if (val.includes("shopping") || val.includes("buy") || val.includes("market")) {
+                    prioritySelect.value = "Low";
+                }
+            }
+
+            // Updates the live preview panel
+            function updatePreview() {
+                const titleValue = titleInput.value.trim() || "Task Title";
+                const descriptionValue = descriptionInput.value.trim() || "Task description preview will appear here.";
+                const dueDateValue = dueDateInput.value;
+                const selectedCategoryText = categorySelect.options[categorySelect.selectedIndex]?.text || "No Category";
+                const priorityValue = prioritySelect.value || "Low";
+                const statusValue = statusSelect.value || "Pending";
+
+                previewTitle.textContent = titleValue;
+                previewDescription.textContent = descriptionValue;
+                previewDueDate.textContent = formatDate(dueDateValue);
+                previewCategory.textContent = categorySelect.value ? selectedCategoryText : "No Category";
+
+                previewPriorityBadge.textContent = priorityValue;
+                previewPriorityBadge.className = getPriorityClass(priorityValue);
+
+                previewStatusBadge.textContent = statusValue;
+                previewStatusBadge.className = getStatusClass(statusValue);
+
+                previewIconWrap.style.background = getIconBackground(statusValue);
+            }
+
+            // Live update bindings
+            titleInput.addEventListener("input", function () {
+                applySimpleAiHint();
+                updatePreview();
+            });
+
+            descriptionInput.addEventListener("input", updatePreview);
+            dueDateInput.addEventListener("change", updatePreview);
+            categorySelect.addEventListener("change", updatePreview);
+            prioritySelect.addEventListener("change", updatePreview);
+            statusSelect.addEventListener("change", updatePreview);
+
+            // Renders initial preview state
+            updatePreview();
+        });
+    </script>
+}

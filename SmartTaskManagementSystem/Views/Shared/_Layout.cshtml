@@ -1,0 +1,263 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta configuration -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Dynamic page title -->
+    <title>@ViewData["Title"] - SmartTaskManagementSystem</title>
+
+    <!-- Core styles (Bootstrap + custom CSS) -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SmartTaskManagementSystem.styles.css" asp-append-version="true" />
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        /* ===== GLOBAL BACKGROUND ===== */
+        /* Creates soft gradient + radial glow for modern UI feel */
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(111, 66, 193, 0.12), transparent 30%), radial-gradient(circle at top right, rgba(13, 110, 253, 0.10), transparent 25%), linear-gradient(180deg, #f8f9ff 0%, #f5f7fb 100%);
+            color: #1f2937;
+        }
+
+        /* ===== NAVBAR CONTAINER ===== */
+        /* Glassmorphism + soft shadow + rounded design */
+        .main-navbar {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+            border-radius: 22px;
+            margin: 18px auto 0 auto;
+            max-width: 1320px;
+        }
+
+        /* ===== BRAND (LOGO + TITLE) ===== */
+        .navbar-brand.smart-brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #111827 !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Logo badge (ST) */
+        .brand-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6f42c1, #0d6efd);
+            color: white;
+            font-weight: 800;
+            box-shadow: 0 8px 18px rgba(111, 66, 193, 0.25);
+            flex-shrink: 0;
+        }
+
+        /* ===== NAVIGATION LINKS ===== */
+        .navbar-nav .nav-link.smart-link {
+            color: #374151 !important;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 10px 16px !important;
+            transition: all 0.25s ease;
+        }
+
+            /* Hover animation */
+            .navbar-nav .nav-link.smart-link:hover {
+                background: rgba(13, 110, 253, 0.08);
+                color: #0d6efd !important;
+                transform: translateY(-1px);
+            }
+
+        /* Nav spacing */
+        .smart-nav-group {
+            gap: 4px;
+        }
+
+        /* ===== PAGE WRAPPER ===== */
+        .page-shell {
+            padding-top: 24px;
+            padding-bottom: 40px;
+        }
+
+        /* ===== HERO SECTION ===== */
+        /* Top gradient banner for branding */
+        .hero-strip {
+            max-width: 1320px;
+            margin: 18px auto 24px auto;
+            background: linear-gradient(135deg, rgba(111, 66, 193, 0.95), rgba(13, 110, 253, 0.92));
+            border-radius: 28px;
+            padding: 28px 32px;
+            color: white;
+            box-shadow: 0 18px 50px rgba(79, 70, 229, 0.18);
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Decorative background elements */
+            .hero-strip::before,
+            .hero-strip::after {
+                content: "";
+                position: absolute;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.08);
+            }
+
+            .hero-strip::before {
+                width: 220px;
+                height: 220px;
+                top: -60px;
+                right: -40px;
+            }
+
+            .hero-strip::after {
+                width: 160px;
+                height: 160px;
+                bottom: -60px;
+                left: -20px;
+            }
+
+            /* Hero title */
+            .hero-strip h1 {
+                font-size: 2rem;
+                font-weight: 800;
+            }
+
+        /* ===== CONTENT CONTAINER ===== */
+        /* Glass card style wrapper for all pages */
+        .content-wrapper {
+            max-width: 1320px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.55);
+            border: 1px solid rgba(255,255,255,0.45);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+            padding: 28px;
+        }
+
+        /* ===== FOOTER ===== */
+        .smart-footer {
+            max-width: 1320px;
+            margin: 24px auto 20px auto;
+            padding: 18px 24px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.45);
+        }
+
+        /* ===== MODAL FIXES ===== */
+        /* Improves modal appearance consistency */
+        .modal {
+            backdrop-filter: none !important;
+        }
+
+        .modal-content {
+            border-radius: 20px !important;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 991.98px) {
+            .content-wrapper {
+                padding: 18px;
+            }
+
+            .app-navbar-collapse {
+                margin-top: 14px;
+                padding-top: 14px;
+                border-top: 1px solid rgba(0,0,0,0.06);
+            }
+
+            .navbar-nav .nav-link.smart-link {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <header>
+        <nav class="navbar navbar-expand-lg main-navbar px-3 px-lg-4 py-3">
+            <div class="container-fluid px-0">
+
+                <!-- Brand -->
+                <a class="navbar-brand smart-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-badge">ST</span>
+                    <span>Smart Task Management</span>
+                </a>
+
+                <!-- Mobile toggle -->
+                <button class="navbar-toggler app-navbar-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <!-- Navigation + Auth -->
+                <div class="collapse navbar-collapse app-navbar-collapse" id="mainNavbar">
+
+                    <!-- Main navigation -->
+                    <ul class="navbar-nav smart-nav-group me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link smart-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link smart-link" asp-controller="Task" asp-action="Index">Tasks</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link smart-link" asp-controller="Category" asp-action="Index">Categories</a>
+                        </li>
+                    </ul>
+
+                    <!-- Identity / Login Partial -->
+                    <div class="d-flex align-items-center app-login-wrap">
+                        <partial name="_LoginPartial" />
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="page-shell">
+
+        <!-- Hero -->
+        <section class="hero-strip">
+            <h1>Organize your workflow beautifully</h1>
+        </section>
+
+        <!-- Page content -->
+        <div class="content-wrapper">
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="smart-footer text-muted">
+        <div class="d-flex justify-content-between">
+            <div>&copy; 2026 - SmartTaskManagementSystem</div>
+        </div>
+    </footer>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

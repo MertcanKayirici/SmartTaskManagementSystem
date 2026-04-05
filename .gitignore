@@ -1,0 +1,82 @@
+# =========================
+# Build Folders
+# =========================
+bin/
+obj/
+out/
+publish/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Rider / VS Code
+# =========================
+.idea/
+.vscode/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# ASP.NET Core
+# =========================
+appsettings.Development.json
+appsettings.Local.json
+
+# (Optional) Eğer prod config saklamak istemiyorsan
+# appsettings.json
+
+# =========================
+# Entity Framework
+# =========================
+*.db
+*.sqlite
+
+# =========================
+# SQL Server LocalDB
+# =========================
+*.mdf
+*.ldf
+
+# =========================
+# Node Modules (eğer frontend tool varsa)
+# =========================
+node_modules/
+
+# =========================
+# wwwroot uploads (isteğe bağlı)
+# =========================
+wwwroot/uploads/
+
+# =========================
+# Publish Profiles
+# =========================
+Properties/PublishProfiles/
+
+# =========================
+# Resharper
+# =========================
+_ReSharper*/
+*.DotSettings.user
+
+# =========================
+# Temp Files
+# =========================
+*.tmp
+*.temp

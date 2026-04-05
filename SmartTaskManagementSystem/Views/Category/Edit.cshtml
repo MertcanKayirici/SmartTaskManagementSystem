@@ -1,0 +1,325 @@
+﻿@model SmartTaskManagementSystem.Models.Category
+
+@{
+    // Sets the page title for the current view
+    ViewData["Title"] = "Edit Category";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-9">
+        <!-- Page header section -->
+        <div class="mb-4 text-center">
+            <span class="badge rounded-pill text-bg-dark px-3 py-2 mb-3">Category Management</span>
+            <h1 class="fw-bold display-6 mb-2">Edit Category</h1>
+            <p class="text-muted mb-0">
+                Update the category name, color, and status to keep your task organization clean and consistent.
+            </p>
+        </div>
+
+        <!-- Main category edit card -->
+        <div class="card border-0 shadow-lg rounded-4 category-form-card overflow-hidden">
+            <!-- Decorative top gradient bar -->
+            <div class="category-form-topbar"></div>
+
+            <div class="card-body p-4 p-lg-5">
+                <!-- Category edit form -->
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Hidden field for category ID -->
+                    <input type="hidden" asp-for="Id" />
+
+                    <!-- Validation summary for model-level errors -->
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-4"></div>
+
+                    <div class="row g-4 align-items-start">
+                        <div class="col-lg-7">
+                            <!-- AI-assisted naming hint -->
+                            <div class="mb-3">
+                                <div class="alert alert-light border rounded-4 mb-0">
+                                    <strong>Simple AI Hint:</strong> Names like
+                                    <em>work</em>, <em>personal</em>, <em>study</em>, <em>urgent</em>, or <em>shopping</em>
+                                    can automatically suggest a color.
+                                </div>
+                            </div>
+
+                            <!-- Category name input -->
+                            <div class="mb-4">
+                                <label asp-for="Name" class="form-label fw-semibold">Category Name</label>
+                                <input asp-for="Name"
+                                       class="form-control form-control-lg rounded-4 shadow-sm"
+                                       placeholder="Example: Work, Personal, Study" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Category color picker and hex preview -->
+                            <div class="mb-4">
+                                <label asp-for="Color" class="form-label fw-semibold">Category Color</label>
+
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <input asp-for="Color"
+                                           type="color"
+                                           class="form-control form-control-color rounded-4 shadow-sm"
+                                           id="colorPicker"
+                                           title="Choose category color"
+                                           value="@(string.IsNullOrWhiteSpace(Model?.Color) ? "#6f42c1" : Model.Color)" />
+
+                                    <input type="text"
+                                           id="colorHex"
+                                           class="form-control rounded-4 shadow-sm color-hex-input"
+                                           value="@(string.IsNullOrWhiteSpace(Model?.Color) ? "#6f42c1" : Model.Color)"
+                                           readonly />
+                                </div>
+
+                                <div class="form-text mt-2">
+                                    The selected color will visually represent this category across the system.
+                                </div>
+
+                                <span asp-validation-for="Color" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Active / passive status toggle -->
+                            <div class="mb-0">
+                                <label class="form-label fw-semibold d-block">Status</label>
+                                <div class="status-switch-box rounded-4 p-3 shadow-sm">
+                                    <div class="form-check form-switch m-0">
+                                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                        <label asp-for="IsActive" class="form-check-label fw-medium">Active Category</label>
+                                    </div>
+
+                                    <small class="text-muted d-block mt-2">
+                                        Only active categories should be available for new task assignments.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live preview panel -->
+                        <div class="col-lg-5">
+                            <div class="preview-panel rounded-4 shadow-sm p-4">
+                                <p class="text-uppercase text-muted small fw-bold mb-3">Live Preview</p>
+
+                                <div class="preview-card rounded-4 p-4 text-center">
+                                    <!-- Color indicator circle -->
+                                    <div class="preview-color-circle mx-auto mb-3" id="previewColorCircle"></div>
+
+                                    <!-- Preview category name -->
+                                    <h5 class="fw-bold mb-2" id="previewName">
+                                        @(string.IsNullOrWhiteSpace(Model?.Name) ? "Category Name" : Model.Name)
+                                    </h5>
+
+                                    <!-- Preview badge -->
+                                    <div class="mb-3">
+                                        <span class="badge rounded-pill px-3 py-2" id="previewBadge">
+                                            @(string.IsNullOrWhiteSpace(Model?.Name) ? "Preview" : Model.Name)
+                                        </span>
+                                    </div>
+
+                                    <!-- Preview status -->
+                                    <div>
+                                        <span class="badge rounded-pill px-3 py-2 @((Model?.IsActive ?? true) ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")"
+                                              id="previewStatus">
+                                            @((Model?.IsActive ?? true) ? "Active" : "Passive")
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form action buttons -->
+                    <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-4 px-4 py-2">
+                            Back to List
+                        </a>
+
+                        <button type="submit" class="btn btn-dark rounded-4 px-4 py-2 shadow-sm">
+                            Update Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Glassmorphism card effect */
+    .category-form-card {
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Top accent gradient bar */
+    .category-form-topbar {
+        height: 8px;
+        background: linear-gradient(90deg, #6f42c1, #0d6efd, #20c997);
+    }
+
+    /* Shared input border styling */
+    .form-control,
+    .form-select {
+        border: 1px solid #e5e7eb;
+    }
+
+        /* Focus state for form controls */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.12);
+        }
+
+    /* Color picker sizing */
+    .form-control-color {
+        width: 80px;
+        height: 56px;
+        padding: 6px;
+        cursor: pointer;
+        min-width: 80px;
+    }
+
+    /* Hex color display input */
+    .color-hex-input {
+        max-width: 180px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        background-color: #f8f9fa;
+    }
+
+    /* Shared panel background styling */
+    .status-switch-box,
+    .preview-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+    }
+
+    /* Preview card layout */
+    .preview-card {
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: radial-gradient(circle at top right, rgba(111, 66, 193, 0.08), transparent 35%), linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+        border: 1px dashed #dbe3f0;
+    }
+
+    /* Preview color circle */
+    .preview-color-circle {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #6f42c1;
+        box-shadow: 0 10px 24px rgba(111, 66, 193, 0.25);
+    }
+
+    /* Preview badge default style */
+    #previewBadge {
+        background-color: #6f42c1;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* Pointer cursor for switch input */
+    .form-check-input {
+        cursor: pointer;
+    }
+
+        /* Active switch appearance */
+        .form-check-input:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+    /* Responsive adjustments for smaller screens */
+    @@media (max-width: 991.98px) {
+        .preview-card {
+            min-height: auto;
+        }
+
+        .color-hex-input {
+            max-width: 100%;
+        }
+    }
+</style>
+
+@section Scripts {
+    @{
+        // Loads built-in client-side validation scripts
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Initialize preview interactions after the DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            // Form element references
+            const nameInput = document.getElementById("Name");
+            const colorPicker = document.getElementById("colorPicker");
+            const colorHex = document.getElementById("colorHex");
+            const isActive = document.getElementById("IsActive");
+
+            // Preview element references
+            const previewName = document.getElementById("previewName");
+            const previewBadge = document.getElementById("previewBadge");
+            const previewCircle = document.getElementById("previewColorCircle");
+            const previewStatus = document.getElementById("previewStatus");
+
+            // Suggests a color based on common category keywords
+            function suggestColorByName(name) {
+                const value = name.toLowerCase();
+
+                if (value.includes("work") || value.includes("business") || value.includes("office")) return "#0d6efd";
+                if (value.includes("personal") || value.includes("home") || value.includes("life")) return "#6f42c1";
+                if (value.includes("study") || value.includes("school") || value.includes("education")) return "#198754";
+                if (value.includes("urgent") || value.includes("important") || value.includes("critical")) return "#dc3545";
+                if (value.includes("shopping") || value.includes("market") || value.includes("buy")) return "#fd7e14";
+
+                return colorPicker.value || "#6f42c1";
+            }
+
+            // Updates the live preview panel based on current form values
+            function updatePreview(allowAiSuggestion = false) {
+                const nameValue = nameInput.value.trim() || "Category Name";
+                const activeValue = isActive.checked;
+
+                if (allowAiSuggestion && nameInput.value.trim()) {
+                    colorPicker.value = suggestColorByName(nameInput.value.trim());
+                }
+
+                const colorValue = colorPicker.value || "#6f42c1";
+
+                previewName.textContent = nameValue;
+                previewBadge.textContent = nameValue === "Category Name" ? "Preview" : nameValue;
+
+                previewBadge.style.backgroundColor = colorValue;
+                previewCircle.style.backgroundColor = colorValue;
+                previewCircle.style.boxShadow = `0 10px 24px ${colorValue}55`;
+
+                colorHex.value = colorValue;
+
+                previewStatus.textContent = activeValue ? "Active" : "Passive";
+                previewStatus.className = activeValue
+                    ? "badge rounded-pill px-3 py-2 bg-success-subtle text-success"
+                    : "badge rounded-pill px-3 py-2 bg-secondary-subtle text-secondary";
+            }
+
+            // Update preview while typing the category name
+            nameInput.addEventListener("input", function () {
+                updatePreview(true);
+            });
+
+            // Update preview when the color changes
+            colorPicker.addEventListener("input", function () {
+                updatePreview(false);
+            });
+
+            // Update preview when the status changes
+            isActive.addEventListener("change", function () {
+                updatePreview(false);
+            });
+
+            // Render initial preview state
+            updatePreview(false);
+        });
+    </script>
+}

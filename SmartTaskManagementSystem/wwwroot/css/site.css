@@ -1,0 +1,244 @@
+/* =========================
+   GLOBAL
+========================= */
+
+body {
+    background: #f8f9fc;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* =========================
+   NAVBAR FIX
+========================= */
+
+.navbar {
+    position: relative;
+    z-index: 9999;
+}
+
+.dropdown-menu {
+    z-index: 9999 !important;
+}
+
+/* =========================
+   AUTH (LOGIN / REGISTER)
+========================= */
+
+.auth-page {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+}
+
+.auth-shell,
+.auth-brand-panel {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-card,
+.auth-side-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #eef1f6;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.auth-card {
+    padding: 35px;
+}
+
+.auth-btn {
+    height: 48px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.auth-header h2 {
+    color: #1e293b;
+}
+
+.auth-footer a {
+    text-decoration: none;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+/* =========================
+   USER AVATAR
+========================= */
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #20c997);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* =========================
+   CARD & TABLE
+========================= */
+
+.card {
+    transition: all 0.25s ease;
+    border-radius: 18px;
+}
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+    }
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* =========================
+   FORM
+========================= */
+
+.form-control,
+.form-select {
+    border: 1px solid #dee2e6;
+    padding: 0.8rem 0.75rem;
+    border-radius: 10px;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: none;
+        border-color: #212529;
+    }
+
+/* =========================
+   BUTTON
+========================= */
+
+.btn {
+    transition: all 0.2s ease;
+    border-radius: 10px;
+}
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+/* =========================
+   BADGE
+========================= */
+
+.badge {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+/* =========================
+   ALERT
+========================= */
+
+.manage-alert {
+    border-radius: 14px;
+    border: 0;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+/* =========================
+   HERO (LANDING)
+========================= */
+
+.hero-section {
+    background: linear-gradient(135deg, #6f42c1, #0d6efd, #20c997);
+    color: white;
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-text {
+    max-width: 600px;
+    margin: 0 auto;
+    color: rgba(255,255,255,0.85);
+}
+
+/* =========================
+   FEATURE CARDS
+========================= */
+
+.feature-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #eef1f6;
+    transition: all 0.3s ease;
+}
+
+    .feature-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    font-size: 1.3rem;
+}
+
+/* =========================
+   EXTRA SECTIONS
+========================= */
+
+.dashboard-preview {
+    background: #f8faff;
+    border-radius: 24px;
+}
+
+.preview-box {
+    background: #fff;
+    border-radius: 16px;
+}
+
+.why-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #eef1f6;
+}
+
+/* =========================
+   CTA
+========================= */
+
+.cta-section {
+    background: linear-gradient(135deg, #0d6efd, #20c997);
+    color: white;
+    border-radius: 24px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+
+    .auth-card {
+        padding: 25px;
+    }
+
+    .hero-text {
+        font-size: 14px;
+    }
+
+    .feature-card {
+        text-align: center;
+    }
+}

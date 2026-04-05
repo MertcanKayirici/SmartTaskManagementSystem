@@ -1,0 +1,1325 @@
+﻿@model List<SmartTaskManagementSystem.Models.TaskItem>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    // Sets the page title for the task list view
+    ViewData["Title"] = "My Tasks";
+
+    // Reads initial filter values from ViewBag for restoring UI state
+    var initialCategoryId = ViewBag.InitialCategoryId?.ToString() ?? "";
+    var initialStatusFilter = ViewBag.InitialStatusFilter?.ToString() ?? "All";
+    var initialPriorityFilter = ViewBag.InitialPriorityFilter?.ToString() ?? "All";
+    var initialDateFilter = ViewBag.InitialDateFilter?.ToString() ?? "All";
+    var initialSortOrder = ViewBag.InitialSortOrder?.ToString() ?? "newest";
+    var initialSearch = ViewBag.InitialSearch?.ToString() ?? "";
+}
+
+<!-- Hidden anti-forgery form used for secure AJAX requests -->
+<form id="antiForgeryForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<style>
+    /* Summary card styling */
+    .task-summary-card {
+        border: 0;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        transition: all 0.2s ease;
+        overflow: hidden;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+    }
+
+        /* Hover effect for summary cards */
+        .task-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10);
+        }
+
+    /* Summary icon container */
+    .task-summary-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+
+    /* Filter header layout */
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+
+    /* Reset button styling */
+    .filter-reset-btn {
+        min-height: 46px;
+        border-radius: 14px;
+        padding-inline: 18px;
+        font-weight: 600;
+    }
+
+    /* Filter card container */
+    .filter-card {
+        border-radius: 28px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+    }
+
+    /* Filter field label */
+    .filter-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    /* Shared filter input styling */
+    .filter-input,
+    .filter-select {
+        border-radius: 16px;
+        min-height: 54px;
+        border: 1px solid #e5e7eb;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+    }
+
+        /* Focus state for filter controls */
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: #0d6efd;
+        }
+
+    /* Active filter chips container */
+    .filter-chip-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+
+    /* Individual filter chip style */
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+        /* Hidden state for filter chips */
+        .filter-chip.d-none {
+            display: none !important;
+        }
+
+    /* Task table base styles */
+    .task-table {
+        font-size: 14px;
+    }
+
+        /* Vertical alignment for table content */
+        .task-table th,
+        .task-table td {
+            vertical-align: middle;
+        }
+
+        /* Smooth row transitions */
+        .task-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+            /* Zebra striping for rows */
+            .task-table tbody tr:nth-child(even) {
+                background: rgba(0, 0, 0, 0.015);
+            }
+
+            /* Hover effect for rows */
+            .task-table tbody tr:hover {
+                background-color: rgba(13, 110, 253, 0.03);
+                box-shadow: inset 0 0 0 9999px rgba(13, 110, 253, 0.02);
+            }
+
+    /* Highlight for overdue rows */
+    .task-row-overdue {
+        border-left: 4px solid #dc3545;
+        background: rgba(220, 53, 69, 0.04) !important;
+    }
+
+    /* Highlight for due-soon rows */
+    .task-row-warning {
+        border-left: 4px solid #ffc107;
+        background: rgba(255, 193, 7, 0.05) !important;
+    }
+
+    /* Default task row state */
+    .task-row-normal {
+        border-left: 4px solid transparent;
+    }
+
+    /* Task title styling */
+    .task-title {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 15px;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Task description styling */
+    .task-description {
+        color: #6b7280;
+        font-size: 12.5px;
+        margin-top: 4px;
+        max-width: 280px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Quick status toggle container */
+    .status-toggle-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fa;
+        border: 1px solid #eef1f6;
+        padding: 8px 14px;
+        border-radius: 999px;
+    }
+
+    /* Toggle cursor */
+    .form-check-input {
+        cursor: pointer;
+    }
+
+        /* Checked toggle appearance */
+        .form-check-input:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+    /* Temporary disabled style while toggle request is processing */
+    .toggle-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    /* Shared action button style */
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for action buttons */
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Icon sizing inside action buttons */
+        .action-btn i {
+            font-size: 1rem;
+            margin: 0 !important;
+            line-height: 1;
+        }
+
+    /* Create button typography */
+    .create-btn {
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    /* Empty state spacing */
+    .empty-state {
+        padding: 56px 24px;
+    }
+
+    /* Sticky alert wrapper */
+    .page-alert-wrap {
+        position: sticky;
+        top: 16px;
+        z-index: 1040;
+    }
+
+    /* Delete modal z-index */
+    #deleteTaskModal {
+        z-index: 1060;
+    }
+
+        /* Delete modal sizing */
+        #deleteTaskModal .modal-dialog {
+            max-width: 640px;
+        }
+
+        /* Delete modal content styling */
+        #deleteTaskModal .modal-content {
+            border-radius: 24px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+        }
+
+        /* Delete modal header spacing */
+        #deleteTaskModal .modal-header {
+            padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+        }
+
+        /* Delete modal body spacing */
+        #deleteTaskModal .modal-body {
+            padding: 0.75rem 1.25rem 1rem 1.25rem;
+        }
+
+        /* Delete modal footer spacing */
+        #deleteTaskModal .modal-footer {
+            padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+        }
+
+    /* Important warning box inside delete modal */
+    .delete-info-box {
+        background: linear-gradient(180deg, #fff 0%, #fff9f2 100%);
+        border: 1px solid #f5e4c3;
+    }
+
+    /* Shared delete modal button style */
+    .delete-modal-btn {
+        min-width: 160px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for modal buttons */
+        .delete-modal-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Disabled state for modal buttons */
+        .delete-modal-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+    /* Backdrop opacity override */
+    .modal-backdrop.show {
+        opacity: 0.35 !important;
+    }
+
+    /* Due date text styling */
+    .task-date {
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* Category badge styling */
+    .task-category-badge {
+        color: #fff;
+        font-weight: 600;
+        border-radius: 999px;
+    }
+
+    /* Warning badges under due date */
+    .task-warning-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    /* Small AI hint cards */
+    .ai-hint-card {
+        border: 1px solid #eef1f6;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 20px;
+    }
+
+    /* Tablet adjustments */
+    @@media (max-width: 991.98px) {
+        .filter-card .card-body {
+            padding: 1.1rem !important;
+        }
+    }
+
+    /* Mobile adjustments */
+    @@media (max-width: 575.98px) {
+        .filter-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-reset-btn {
+            width: 100%;
+        }
+
+        .filter-input,
+        .filter-select {
+            min-height: 50px;
+            border-radius: 14px;
+        }
+
+        .task-summary-card {
+            border-radius: 20px;
+        }
+
+        .status-toggle-wrap {
+            padding: 7px 12px;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+        }
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Dynamic page alert area -->
+    <div class="page-alert-wrap mb-3" id="pageAlertContainer"></div>
+
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="fw-bold mb-1">My Tasks</h1>
+            <p class="text-muted mb-0">Manage your tasks, priorities, and deadlines in one place.</p>
+        </div>
+
+        <div>
+            <a asp-action="Create" class="btn btn-dark px-4 py-2 rounded-3 shadow-sm create-btn">
+                <i class="bi bi-plus-lg me-2"></i>Create New Task
+            </a>
+        </div>
+    </div>
+
+    <!-- Success message from server -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <!-- Small AI hint cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+            <div class="ai-hint-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-1">Simple Smart Hint</h5>
+                        <p class="text-muted small mb-0">
+                            Task titles like <strong>exam</strong>, <strong>deadline</strong>, <strong>meeting</strong>, or <strong>shopping</strong>
+                            can automatically guide priority selection.
+                        </p>
+                    </div>
+                    <span class="badge rounded-pill bg-dark text-white px-3 py-2">Light AI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ai-hint-card p-4 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small mb-1">Deadline Rule</div>
+                    <div class="fw-semibold">Overdue and due soon tasks are highlighted.</div>
+                </div>
+                <i class="bi bi-lightning-charge fs-3 text-warning"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card task-summary-card h-100">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="task-summary-icon bg-primary-subtle text-primary">
+                        <i class="bi bi-list-task"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-1 small">Visible Tasks</p>
+                        <h3 class="fw-bold mb-0" id="totalTasksCount">@Model.Count</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card task-summary-card h-100">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="task-summary-icon bg-success-subtle text-success">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-1 small">Completed</p>
+                        <h3 class="fw-bold mb-0" id="completedTasksCount">@Model.Count(x => x.Status == "Completed")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card task-summary-card h-100">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="task-summary-icon bg-warning-subtle text-warning">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-1 small">Pending / In Progress</p>
+                        <h3 class="fw-bold mb-0" id="pendingTasksCount">@Model.Count(x => x.Status != "Completed")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter header -->
+    <div class="filter-header mb-3">
+        <h6 class="fw-semibold mb-0">Filters</h6>
+        <button type="button" id="resetFiltersBtn" class="btn btn-light border filter-reset-btn">Reset</button>
+    </div>
+
+    <!-- Filter form -->
+    <div class="card filter-card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+            <form id="filterForm" onsubmit="return false;">
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-lg-6">
+                        <label class="filter-label">Search</label>
+                        <input type="text"
+                               id="liveSearchInput"
+                               class="form-control filter-input"
+                               placeholder="Search title or description..." />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="filter-label">Status</label>
+                        <select id="statusFilter" class="form-select filter-select">
+                            <option value="All">All</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="PendingOpen">Not Completed</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="filter-label">Priority</label>
+                        <select id="priorityFilter" class="form-select filter-select">
+                            <option value="All">All</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <label class="filter-label">Category</label>
+                        <select id="categoryFilter" asp-items="ViewBag.CategoryFilterList" class="form-select filter-select">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <label class="filter-label">Time</label>
+                        <select id="dateFilter" class="form-select filter-select">
+                            <option value="All">All Time</option>
+                            <option value="Overdue">Overdue</option>
+                            <option value="Today">Today</option>
+                            <option value="ThisWeek">This Week</option>
+                            <option value="ThisMonth">This Month</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label class="filter-label">Sort By</label>
+                        <select id="sortOrder" class="form-select filter-select">
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="due_asc">Due Date ↑</option>
+                            <option value="due_desc">Due Date ↓</option>
+                            <option value="priority">Priority</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active filter chips -->
+    <div class="filter-chip-wrap">
+        <div class="filter-chip d-none" id="searchChip">
+            <i class="bi bi-search"></i>
+            <span id="searchChipText"></span>
+        </div>
+        <div class="filter-chip d-none" id="statusChip">
+            <i class="bi bi-funnel"></i>
+            <span id="statusChipText"></span>
+        </div>
+        <div class="filter-chip d-none" id="priorityChip">
+            <i class="bi bi-flag"></i>
+            <span id="priorityChipText"></span>
+        </div>
+        <div class="filter-chip d-none" id="categoryChip">
+            <i class="bi bi-tags"></i>
+            <span id="categoryChipText"></span>
+        </div>
+        <div class="filter-chip d-none" id="dateChip">
+            <i class="bi bi-calendar-event"></i>
+            <span id="dateChipText"></span>
+        </div>
+    </div>
+
+    <!-- Main task table card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 task-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Title</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Quick Toggle</th>
+                            <th>Due Date</th>
+                            <th>Category</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="taskTableBody">
+                        @foreach (var item in Model)
+                        {
+                            // Determines badge style based on priority
+                            var priorityClass = item.Priority == "High"
+                            ? "bg-danger-subtle text-danger"
+                            : item.Priority == "Medium"
+                            ? "bg-warning-subtle text-warning"
+                            : "bg-success-subtle text-success";
+
+                            // Determines badge style based on task status
+                            var statusClass = item.Status == "Completed"
+                            ? "bg-success-subtle text-success"
+                            : item.Status == "In Progress"
+                            ? "bg-primary-subtle text-primary"
+                            : "bg-secondary-subtle text-secondary";
+
+                            // Calculates due-soon state
+                            var isDueSoon = item.Status != "Completed" &&
+                            item.DueDate.Date >= DateTime.Today &&
+                            item.DueDate.Date <= DateTime.Today.AddDays(2);
+
+                            // Calculates overdue state
+                            var isOverdue = item.Status != "Completed" &&
+                            item.DueDate.Date < DateTime.Today;
+
+                            // Chooses the row style based on deadline state
+                            var rowClass = isOverdue
+                            ? "task-row-overdue"
+                            : isDueSoon
+                            ? "task-row-warning"
+                            : "task-row-normal";
+
+                            // Resolves category color or fallback value
+                            var categoryColor = item.Category != null && !string.IsNullOrWhiteSpace(item.Category.Color)
+                            ? item.Category.Color
+                            : "#6c757d";
+
+                            <tr id="task-row-@item.Id" class="@rowClass">
+                                <td class="ps-4">
+                                    <div class="task-title">@item.Title</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                                    {
+                                        <div class="task-description">@item.Description</div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2 @priorityClass">
+                                        @item.Priority
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span id="status-badge-@item.Id" class="badge rounded-pill px-3 py-2 @statusClass">
+                                        @item.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="status-toggle-wrap">
+                                        <div class="form-check form-switch m-0">
+                                            <!-- AJAX toggle for task completion status -->
+                                            <input class="form-check-input status-toggle"
+                                                   type="checkbox"
+                                                   data-id="@item.Id"
+                                                   @(item.Status == "Completed" ? "checked" : null) />
+                                        </div>
+                                        <span id="status-text-@item.Id" class="fw-medium">
+                                            @(item.Status == "Completed" ? "Completed" : "Open")
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="task-date">@item.DueDate.ToString("dd MMM yyyy")</span>
+
+                                    @if (isOverdue || isDueSoon)
+                                    {
+                                        <div class="task-warning-wrap">
+                                            @if (isOverdue)
+                                            {
+                                                <span class="badge bg-danger">Overdue</span>
+                                            }
+                                            else if (isDueSoon)
+                                            {
+                                                <span class="badge bg-warning text-dark">Due Soon</span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (item.Category != null)
+                                    {
+                                        <span class="badge rounded-pill px-3 py-2 task-category-badge" style="background:@categoryColor">
+                                            @item.Category.Name
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No Category</span>
+                                    }
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <!-- Edit action -->
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-light border action-btn text-dark"
+                                           title="Edit Task"
+                                           data-bs-toggle="tooltip">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <!-- Delete action button opening the modal -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-light border text-danger action-btn delete-task-btn"
+                                                data-id="@item.Id"
+                                                data-title="@item.Title"
+                                                data-duedate="@item.DueDate.ToString("dd MMM yyyy")"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteTaskModal"
+                                                title="Delete Task">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Empty state shown when no matching tasks exist -->
+                <div id="noResultsBox" class="text-center empty-state d-none">
+                    <div class="mb-2 fs-5 fw-semibold">🚀 No tasks yet</div>
+                    <p class="text-muted mb-3">Start by creating your first task or change your filters.</p>
+                    <a href="/Task/Create" class="btn btn-dark px-4 rounded-3">
+                        Create Task
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div>
+                    <h5 class="modal-title fw-bold mb-1">Delete Task</h5>
+                    <p class="text-muted small mb-0">Please review the selected task before deleting it.</p>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Selected Task</div>
+                    <div class="fw-semibold fs-5" id="selectedTaskTitle">-</div>
+                </div>
+
+                <div class="delete-info-box rounded-4 p-3 mb-3">
+                    <div class="fw-semibold mb-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Important
+                    </div>
+                    <div class="small text-muted mb-2">
+                        This action will permanently remove the selected task from your list.
+                    </div>
+                    <div class="small">
+                        <strong>Due Date:</strong> <span id="selectedTaskDueDate">-</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border rounded-4 mb-0 small">
+                    This action cannot be undone after confirmation.
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 d-flex justify-content-end flex-wrap gap-2">
+                <button type="button"
+                        class="btn btn-light border rounded-3 px-4 delete-modal-btn"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        id="confirmDeleteBtn"
+                        class="btn btn-danger rounded-3 px-4 delete-modal-btn">
+                    <i class="bi bi-trash me-2"></i>Delete Task
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initializes task list interactions after the DOM is ready
+        document.addEventListener("DOMContentLoaded", function () {
+            // Reads the anti-forgery token for secure AJAX requests
+            const tokenInput = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : "";
+
+            // Restores initial filter values coming from the server
+            const initialCategoryId = "@initialCategoryId";
+            const initialStatusFilter = "@initialStatusFilter";
+            const initialPriorityFilter = "@initialPriorityFilter";
+            const initialDateFilter = "@initialDateFilter";
+            const initialSortOrder = "@initialSortOrder";
+            const initialSearch = "@initialSearch";
+
+            // Main DOM references
+            const pageAlertContainer = document.getElementById("pageAlertContainer");
+            const modalEl = document.getElementById("deleteTaskModal");
+            const taskTableBody = document.getElementById("taskTableBody");
+            const noResultsBox = document.getElementById("noResultsBox");
+
+            // Summary count DOM references
+            const totalTasksCount = document.getElementById("totalTasksCount");
+            const completedTasksCount = document.getElementById("completedTasksCount");
+            const pendingTasksCount = document.getElementById("pendingTasksCount");
+
+            // Filter control DOM references
+            const liveSearchInput = document.getElementById("liveSearchInput");
+            const statusFilter = document.getElementById("statusFilter");
+            const priorityFilter = document.getElementById("priorityFilter");
+            const categoryFilter = document.getElementById("categoryFilter");
+            const dateFilter = document.getElementById("dateFilter");
+            const sortOrder = document.getElementById("sortOrder");
+            const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+
+            // Filter chip DOM references
+            const searchChip = document.getElementById("searchChip");
+            const statusChip = document.getElementById("statusChip");
+            const priorityChip = document.getElementById("priorityChip");
+            const categoryChip = document.getElementById("categoryChip");
+            const dateChip = document.getElementById("dateChip");
+
+            const searchChipText = document.getElementById("searchChipText");
+            const statusChipText = document.getElementById("statusChipText");
+            const priorityChipText = document.getElementById("priorityChipText");
+            const categoryChipText = document.getElementById("categoryChipText");
+            const dateChipText = document.getElementById("dateChipText");
+
+            // Delete modal DOM references
+            const selectedTaskTitle = document.getElementById("selectedTaskTitle");
+            const selectedTaskDueDate = document.getElementById("selectedTaskDueDate");
+            const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+            // Stores the selected task ID for deletion
+            let selectedTaskId = null;
+
+            // Stores debounce timer for live search
+            let searchDebounce = null;
+
+            // Moves the modal to the body if needed to avoid stacking/layout issues
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+
+            // Creates or retrieves the Bootstrap modal instance
+            const deleteModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+            // Displays a dismissible page alert
+            function showPageAlert(type, message) {
+                pageAlertContainer.innerHTML = `
+                    <div class="alert alert-${type} alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+            }
+
+            // Displays a temporary toast notification
+            function showToast(message) {
+                const div = document.createElement("div");
+                div.className = "position-fixed bottom-0 end-0 p-3";
+                div.style.zIndex = "9999";
+
+                div.innerHTML = `
+                    <div class="toast show align-items-center text-bg-dark border-0">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(div);
+                setTimeout(() => div.remove(), 2000);
+            }
+
+            // Returns badge classes for task priority
+            function getPriorityBadgeClass(priority) {
+                if (priority === "High") return "bg-danger-subtle text-danger";
+                if (priority === "Medium") return "bg-warning-subtle text-warning";
+                return "bg-success-subtle text-success";
+            }
+
+            // Returns badge classes for task status
+            function getStatusBadgeClass(status) {
+                if (status === "Completed") return "bg-success-subtle text-success";
+                if (status === "In Progress") return "bg-primary-subtle text-primary";
+                return "bg-secondary-subtle text-secondary";
+            }
+
+            // Returns table row class based on deadline state
+            function getRowClass(item) {
+                if (item.overdue) return "task-row-overdue";
+                if (item.dueSoon) return "task-row-warning";
+                return "task-row-normal";
+            }
+
+            // Escapes HTML-sensitive content before rendering
+            function escapeHtml(value) {
+                if (value === null || value === undefined) return "";
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+            // Updates the active filter chips
+            function updateFilterChips() {
+                const searchValue = liveSearchInput.value.trim();
+                const statusValue = statusFilter.value;
+                const priorityValue = priorityFilter.value;
+                const categoryText = categoryFilter.options[categoryFilter.selectedIndex]?.text || "";
+                const categoryValue = categoryFilter.value;
+                const dateValue = dateFilter.value;
+
+                if (searchValue) {
+                    searchChip.classList.remove("d-none");
+                    searchChipText.textContent = `Search: ${searchValue}`;
+                } else {
+                    searchChip.classList.add("d-none");
+                }
+
+                if (statusValue !== "All") {
+                    statusChip.classList.remove("d-none");
+                    statusChipText.textContent = `Status: ${statusValue}`;
+                } else {
+                    statusChip.classList.add("d-none");
+                }
+
+                if (priorityValue !== "All") {
+                    priorityChip.classList.remove("d-none");
+                    priorityChipText.textContent = `Priority: ${priorityValue}`;
+                } else {
+                    priorityChip.classList.add("d-none");
+                }
+
+                if (categoryValue) {
+                    categoryChip.classList.remove("d-none");
+                    categoryChipText.textContent = `Category: ${categoryText}`;
+                } else {
+                    categoryChip.classList.add("d-none");
+                }
+
+                if (dateValue !== "All") {
+                    dateChip.classList.remove("d-none");
+                    dateChipText.textContent = `Time: ${dateValue}`;
+                } else {
+                    dateChip.classList.add("d-none");
+                }
+            }
+
+            // Renders task table rows dynamically from AJAX data
+            function renderRows(tasks) {
+                updateFilterChips();
+
+                if (!tasks || tasks.length === 0) {
+                    taskTableBody.innerHTML = "";
+                    noResultsBox.classList.remove("d-none");
+                    return;
+                }
+
+                noResultsBox.classList.add("d-none");
+
+                let html = "";
+
+                tasks.forEach(item => {
+                    const priorityClass = getPriorityBadgeClass(item.priority);
+                    const statusClass = getStatusBadgeClass(item.status);
+                    const rowClass = getRowClass(item);
+
+                    html += `
+                        <tr id="task-row-${item.id}" class="${rowClass}">
+                            <td class="ps-4">
+                                <div class="task-title">${escapeHtml(item.title)}</div>
+                                ${item.description ? `<div class="task-description">${escapeHtml(item.description)}</div>` : ""}
+                            </td>
+
+                            <td>
+                                <span class="badge rounded-pill px-3 py-2 ${priorityClass}">
+                                    ${escapeHtml(item.priority)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span id="status-badge-${item.id}" class="badge rounded-pill px-3 py-2 ${statusClass}">
+                                    ${escapeHtml(item.status)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="status-toggle-wrap">
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input status-toggle"
+                                               type="checkbox"
+                                               data-id="${item.id}"
+                                               ${item.isCompleted ? "checked" : ""} />
+                                    </div>
+                                    <span id="status-text-${item.id}" class="fw-medium">
+                                        ${item.isCompleted ? "Completed" : "Open"}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="task-date">${escapeHtml(item.dueDate)}</span>
+                                ${(item.overdue || item.dueSoon)
+                                    ? `<div class="task-warning-wrap">
+                                            ${item.overdue ? `<span class="badge bg-danger">Overdue</span>` : ``}
+                                            ${item.dueSoon ? `<span class="badge bg-warning text-dark">Due Soon</span>` : ``}
+                                       </div>`
+                                    : ``}
+                            </td>
+
+                            <td>
+                                ${item.categoryName
+                                    ? `<span class="badge rounded-pill px-3 py-2 task-category-badge" style="background:${escapeHtml(item.categoryColor)}">${escapeHtml(item.categoryName)}</span>`
+                                    : `<span class="text-muted">No Category</span>`}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="/Task/Edit/${item.id}"
+                                       class="btn btn-sm btn-light border action-btn text-dark"
+                                       title="Edit Task">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-light border text-danger action-btn delete-task-btn"
+                                            data-id="${item.id}"
+                                            data-title="${escapeHtml(item.title)}"
+                                            data-duedate="${escapeHtml(item.dueDate)}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteTaskModal"
+                                            title="Delete Task">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                taskTableBody.innerHTML = html;
+                bindDynamicEvents();
+            }
+
+            // Updates the summary counters
+            function updateSummaryCounts(total, completed, pending) {
+                totalTasksCount.textContent = total;
+                completedTasksCount.textContent = completed;
+                pendingTasksCount.textContent = pending;
+            }
+
+            // Applies filters through AJAX and refreshes the task table
+            async function applyFiltersAjax() {
+                try {
+                    resetFiltersBtn.disabled = true;
+                    resetFiltersBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Loading`;
+
+                    const params = new URLSearchParams();
+
+                    if (liveSearchInput.value.trim()) {
+                        params.append("search", liveSearchInput.value.trim());
+                    }
+
+                    if (statusFilter.value && statusFilter.value !== "All") {
+                        params.append("statusFilter", statusFilter.value);
+                    }
+
+                    if (priorityFilter.value && priorityFilter.value !== "All") {
+                        params.append("priorityFilter", priorityFilter.value);
+                    }
+
+                    if (categoryFilter.value) {
+                        params.append("categoryId", categoryFilter.value);
+                    }
+
+                    if (dateFilter.value && dateFilter.value !== "All") {
+                        params.append("dateFilter", dateFilter.value);
+                    }
+
+                    if (sortOrder.value) {
+                        params.append("sortOrder", sortOrder.value);
+                    }
+
+                    const response = await fetch("/Task/FilterAjax?" + params.toString(), {
+                        method: "GET",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Filter request failed.");
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        showPageAlert("danger", "Filter operation failed.");
+                        return;
+                    }
+
+                    renderRows(data.tasks);
+                    updateSummaryCounts(data.total, data.completed, data.pending);
+                } catch (error) {
+                    console.error(error);
+                    showPageAlert("danger", "An error occurred while applying filters.");
+                } finally {
+                    resetFiltersBtn.disabled = false;
+                    resetFiltersBtn.innerHTML = `Reset`;
+                }
+            }
+
+            // Resets all filter controls to default values
+            function resetFilters() {
+                liveSearchInput.value = "";
+                statusFilter.value = "All";
+                priorityFilter.value = "All";
+                categoryFilter.value = "";
+                dateFilter.value = "All";
+                sortOrder.value = "newest";
+                applyFiltersAjax();
+            }
+
+            // Toggles task completion state using AJAX
+            async function toggleTaskStatus(id, checkbox) {
+                const badge = document.getElementById(`status-badge-${id}`);
+                const statusText = document.getElementById(`status-text-${id}`);
+
+                try {
+                    checkbox.classList.add("toggle-loading");
+
+                    const response = await fetch("/Task/ToggleStatusAjax", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "RequestVerificationToken": token,
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new URLSearchParams({ id: id })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Status request failed.");
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        checkbox.checked = !checkbox.checked;
+                        showPageAlert("danger", data.message || "Status update failed.");
+                        return;
+                    }
+
+                    if (badge) {
+                        badge.textContent = data.status;
+                        badge.className = `badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.status)}`;
+                    }
+
+                    if (statusText) {
+                        statusText.textContent = data.statusText;
+                    }
+
+                    showToast("Task updated");
+                    await applyFiltersAjax();
+                } catch (error) {
+                    checkbox.checked = !checkbox.checked;
+                    console.error(error);
+                    showPageAlert("danger", "An error occurred while updating the task status.");
+                } finally {
+                    checkbox.classList.remove("toggle-loading");
+                }
+            }
+
+            // Deletes the selected task through AJAX
+            async function deleteTaskAjax() {
+                if (!selectedTaskId) return;
+
+                confirmDeleteBtn.disabled = true;
+
+                try {
+                    const response = await fetch("/Task/DeleteAjax", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "RequestVerificationToken": token,
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new URLSearchParams({ id: selectedTaskId })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Delete request failed.");
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        showPageAlert("danger", data.message || "Delete failed.");
+                        return;
+                    }
+
+                    deleteModal.hide();
+                    selectedTaskId = null;
+                    showToast("Task deleted");
+                    await applyFiltersAjax();
+                } catch (error) {
+                    console.error(error);
+                    showPageAlert("danger", "An error occurred while deleting the task.");
+                } finally {
+                    confirmDeleteBtn.disabled = false;
+                }
+            }
+
+            // Binds dynamic event handlers after rows are rendered
+            function bindDynamicEvents() {
+                document.querySelectorAll(".status-toggle").forEach(toggle => {
+                    toggle.addEventListener("change", function () {
+                        const id = parseInt(this.getAttribute("data-id"));
+                        toggleTaskStatus(id, this);
+                    });
+                });
+
+                document.querySelectorAll(".delete-task-btn").forEach(btn => {
+                    btn.addEventListener("click", function () {
+                        selectedTaskId = this.getAttribute("data-id");
+                        selectedTaskTitle.textContent = this.getAttribute("data-title") || "-";
+                        selectedTaskDueDate.textContent = this.getAttribute("data-duedate") || "-";
+                    });
+                });
+            }
+
+            // Reset button binding
+            resetFiltersBtn.addEventListener("click", resetFilters);
+
+            // Debounced live search binding
+            liveSearchInput.addEventListener("input", function () {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(() => {
+                    applyFiltersAjax();
+                }, 300);
+            });
+
+            // Filter change bindings
+            statusFilter.addEventListener("change", applyFiltersAjax);
+            priorityFilter.addEventListener("change", applyFiltersAjax);
+            categoryFilter.addEventListener("change", applyFiltersAjax);
+            dateFilter.addEventListener("change", applyFiltersAjax);
+            sortOrder.addEventListener("change", applyFiltersAjax);
+
+            // Delete confirmation binding
+            confirmDeleteBtn.addEventListener("click", deleteTaskAjax);
+
+            // Clears modal state after closing
+            modalEl.addEventListener("hidden.bs.modal", function () {
+                selectedTaskId = null;
+                selectedTaskTitle.textContent = "-";
+                selectedTaskDueDate.textContent = "-";
+                confirmDeleteBtn.disabled = false;
+            });
+
+            // Restores initial filter values from server state
+            liveSearchInput.value = initialSearch;
+            statusFilter.value = initialStatusFilter;
+            priorityFilter.value = initialPriorityFilter;
+            dateFilter.value = initialDateFilter;
+            sortOrder.value = initialSortOrder;
+
+            if (initialCategoryId) {
+                categoryFilter.value = initialCategoryId;
+            }
+
+            // Binds events for server-rendered rows
+            bindDynamicEvents();
+
+            // Applies AJAX filtering if any initial filter is active
+            if (
+                initialCategoryId ||
+                initialStatusFilter !== "All" ||
+                initialPriorityFilter !== "All" ||
+                initialDateFilter !== "All" ||
+                initialSortOrder !== "newest" ||
+                initialSearch
+            ) {
+                applyFiltersAjax();
+            } else {
+                updateFilterChips();
+            }
+        });
+    </script>
+}

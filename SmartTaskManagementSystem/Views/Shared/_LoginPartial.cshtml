@@ -1,0 +1,255 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<style>
+    /* ===== AUTH NAV CONTAINER ===== */
+    /* Handles spacing between login/register or user dropdown */
+    .auth-nav-wrap {
+        gap: 8px;
+    }
+
+    /* ===== LOGIN LINK ===== */
+    .auth-login-link {
+        color: #2563eb !important;
+        font-weight: 600;
+        padding: 10px 14px !important;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for login */
+        .auth-login-link:hover {
+            background: rgba(37, 99, 235, 0.08);
+            color: #1d4ed8 !important;
+        }
+
+    /* ===== REGISTER BUTTON ===== */
+    /* Primary CTA button */
+    .auth-register-btn {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        border: none;
+        color: #fff;
+        border-radius: 999px;
+        font-weight: 600;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+        transition: all 0.25s ease;
+    }
+
+        /* Hover animation */
+        .auth-register-btn:hover {
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+        }
+
+    /* ===== USER DROPDOWN TOGGLE ===== */
+    /* Container for avatar + username */
+    .auth-user-toggle {
+        padding: 8px 12px !important;
+        border-radius: 16px;
+        transition: all 0.2s ease;
+        min-height: 54px;
+    }
+
+        .auth-user-toggle:hover {
+            background: rgba(15, 23, 42, 0.04);
+        }
+
+    /* Username display (handles overflow) */
+    .auth-user-name {
+        color: #374151;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ===== DROPDOWN MENU ===== */
+    .auth-dropdown-menu {
+        min-width: 250px;
+        padding: 10px;
+        margin-top: 10px !important;
+        border-radius: 18px !important;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    /* Dropdown header (user info) */
+    .auth-dropdown-header {
+        padding: 10px 12px 6px 12px;
+    }
+
+    /* Dropdown items */
+    .auth-dropdown-item {
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .auth-dropdown-item:hover {
+            background: #f8fafc;
+        }
+
+    /* ===== USER AVATAR ===== */
+    /* Generates initial-based avatar (first letter of username) */
+    .user-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #2563eb);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
+        flex-shrink: 0;
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    @@media (max-width: 991.98px) {
+        /* Stack auth elements vertically */
+        .auth-nav-wrap {
+            width: 100%;
+            align-items: stretch !important;
+            gap: 10px;
+        }
+
+            .auth-nav-wrap .nav-item,
+            .auth-nav-wrap .dropdown {
+                width: 100%;
+            }
+        /* Full-width dropdown toggle */
+        .auth-user-toggle {
+            width: 100%;
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            padding: 12px 14px !important;
+        }
+        /* Remove text truncation on mobile */
+        .auth-user-name {
+            max-width: none;
+            flex: 1;
+        }
+        /* Convert dropdown to full-width card style */
+        .auth-dropdown-menu {
+            position: static !important;
+            transform: none !important;
+            width: 100%;
+            margin-top: 10px !important;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+        }
+        /* Full-width login button */
+        .auth-login-link {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background: rgba(37, 99, 235, 0.06);
+        }
+        /* Full-width register button */
+        .auth-register-btn {
+            width: 100%;
+            margin-left: 0 !important;
+        }
+    }
+</style>
+
+<!-- ===== AUTH NAVIGATION ===== -->
+<ul class="navbar-nav ms-auto align-items-center auth-nav-wrap">
+
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <!-- ===== LOGGED-IN STATE ===== -->
+        <li class="nav-item dropdown">
+
+            <!-- User dropdown trigger -->
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 auth-user-toggle"
+               href="#"
+               id="userDropdown"
+               role="button"
+               data-bs-toggle="dropdown">
+
+                <!-- Avatar (first letter of username) -->
+                <div class="user-avatar">
+                    @User.Identity?.Name?.Substring(0, 1).ToUpper()
+                </div>
+
+                <!-- Username -->
+                <span class="fw-semibold auth-user-name">@User.Identity?.Name</span>
+            </a>
+
+            <!-- Dropdown menu -->
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 auth-dropdown-menu">
+
+                <!-- User info -->
+                <li class="dropdown-header auth-dropdown-header">
+                    <div class="small text-muted">Signed in as</div>
+                    <div class="fw-bold text-dark">@User.Identity?.Name</div>
+                </li>
+
+                <li><hr class="dropdown-divider" /></li>
+
+                <!-- Profile -->
+                <li>
+                    <a class="dropdown-item auth-dropdown-item"
+                       asp-area="Identity"
+                       asp-page="/Account/Manage/Index">
+                        <i class="bi bi-person me-2"></i>Profile
+                    </a>
+                </li>
+
+                <!-- Change Password -->
+                <li>
+                    <a class="dropdown-item auth-dropdown-item"
+                       asp-area="Identity"
+                       asp-page="/Account/Manage/ChangePassword">
+                        <i class="bi bi-shield-lock me-2"></i>Change Password
+                    </a>
+                </li>
+
+                <li><hr class="dropdown-divider" /></li>
+
+                <!-- Logout -->
+                <li>
+                    <form asp-area="Identity"
+                          asp-page="/Account/Logout"
+                          method="post">
+                        <button type="submit" class="dropdown-item auth-dropdown-item text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </li>
+    }
+    else
+    {
+        <!-- ===== NOT LOGGED-IN STATE ===== -->
+        <!-- Login -->
+        <li class="nav-item">
+            <a class="nav-link auth-login-link"
+               asp-area="Identity"
+               asp-page="/Account/Login">
+                Login
+            </a>
+        </li>
+
+        <!-- Register -->
+        <li class="nav-item">
+            <a class="btn auth-register-btn ms-2 px-4"
+               asp-area="Identity"
+               asp-page="/Account/Register">
+                Register
+            </a>
+        </li>
+    }
+</ul>

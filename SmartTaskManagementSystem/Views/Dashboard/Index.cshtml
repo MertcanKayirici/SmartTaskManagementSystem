@@ -1,0 +1,1430 @@
+﻿@using System.Text.Json
+@using SmartTaskManagementSystem.Models
+
+@{
+    // Sets the page title for the dashboard view
+    ViewData["Title"] = "Dashboard";
+
+    // Main task summary values
+    var total = ViewBag.Total ?? 0;
+    var completed = ViewBag.Completed ?? 0;
+    var pending = ViewBag.Pending ?? 0;
+
+    // Priority distribution values
+    var highPriority = ViewBag.HighPriority ?? 0;
+    var mediumPriority = ViewBag.MediumPriority ?? 0;
+    var lowPriority = ViewBag.LowPriority ?? 0;
+
+    // Additional dashboard statistics
+    var overdueTasks = ViewBag.OverdueTasks ?? 0;
+    var todayTasks = ViewBag.TodayTasks ?? 0;
+    var activeCategories = ViewBag.ActiveCategories ?? 0;
+    var categoriesWithTasks = ViewBag.CategoriesWithTasks ?? 0;
+
+    // Weekly and category insight values
+    var createdThisWeek = ViewBag.CreatedThisWeek ?? 0;
+    var dueThisWeek = ViewBag.DueThisWeek ?? 0;
+    var approachingDeadlines = ViewBag.ApproachingDeadlines ?? 0;
+    var mostUsedCategory = ViewBag.MostUsedCategory?.ToString() ?? "No category yet";
+    var mostUsedCategoryCount = ViewBag.MostUsedCategoryCount ?? 0;
+
+    // Lists used in dashboard sections
+    var recentTasks = ViewBag.RecentTasks as List<TaskItem> ?? new List<TaskItem>();
+    var upcomingTasks = ViewBag.UpcomingTasks as List<TaskItem> ?? new List<TaskItem>();
+    var highlightTaskCards = ViewBag.HighlightTaskCards as IEnumerable<TaskItem> ?? new List<TaskItem>();
+    var categoryDistribution = ViewBag.CategoryDistribution as IEnumerable<dynamic> ?? new List<dynamic>();
+    var latestAuditLogs = ViewBag.LatestAuditLogs as List<AuditLog> ?? new List<AuditLog>();
+
+    // Focus task filter settings
+    var focusStatus = ViewBag.FocusStatus?.ToString() ?? "Open";
+    var focusCount = ViewBag.FocusCount != null ? (int)ViewBag.FocusCount : 6;
+
+    // Completion percentage used in the hero card
+    var completionRate = total > 0 ? (int)Math.Round(((double)completed / total) * 100) : 0;
+
+    // Category chart data prepared for Chart.js
+    var categoryChartLabels = categoryDistribution.Select(x => (string)x.Name).ToList();
+    var categoryChartCounts = categoryDistribution.Select(x => (int)x.Count).ToList();
+    var categoryChartColors = categoryDistribution.Select(x => (string)x.Color).ToList();
+
+    // Smart insight text shown at the top of the dashboard
+    var smartInsight = ViewBag.SmartInsight?.ToString() ?? "Your dashboard is up to date.";
+}
+
+<!-- Hidden anti-forgery form used for secure AJAX requests -->
+<form id="antiForgeryForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container py-5">
+    <!-- Dynamic alert container -->
+    <div id="pageAlertContainer" class="mb-3"></div>
+
+    <!-- Dashboard hero section -->
+    <div class="dashboard-hero p-4 p-lg-5 mb-4">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge rounded-pill bg-light text-dark px-3 py-2 mb-3">Smart Overview</span>
+                <h1 class="fw-bold display-6 mb-2">Dashboard</h1>
+                <p class="mb-0 dashboard-hero-text">
+                    Tasks, categories, deadlines, and recent activity in one clean workspace.
+                </p>
+
+                <!-- Quick navigation buttons -->
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a asp-controller="Task" asp-action="Index" class="btn btn-light rounded-3 px-4 py-2">
+                        <i class="bi bi-list-task me-2"></i>Open Tasks
+                    </a>
+                    <a asp-controller="Category" asp-action="Index" class="btn btn-outline-light rounded-3 px-4 py-2">
+                        <i class="bi bi-tags me-2"></i>Open Categories
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Hero mini summary card -->
+                <div class="hero-mini-card p-4 text-center">
+                    <div class="small text-muted mb-2">Completion Rate</div>
+                    <div class="display-6 fw-bold mb-2" id="completionRateText">@completionRate%</div>
+
+                    <!-- Progress bar showing completion percentage -->
+                    <div class="progress rounded-pill completion-progress">
+                        <div class="progress-bar rounded-pill completion-progress-bar"
+                             role="progressbar"
+                             style="width:0%;"
+                             aria-valuenow="@completionRate"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+
+                    <div class="hero-mini-meta mt-3">
+                        <span id="heroCompletedText">@completed completed</span>
+                        <span>•</span>
+                        <span id="heroPendingText">@pending open</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart insight section -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm dashboard-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-bold mb-1">Smart Insight</h5>
+                            <p class="text-muted small mb-0" id="dashboardInsightText">@smartInsight</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge rounded-pill bg-dark text-white px-3 py-2 smart-insight-badge" id="mostUsedCategoryBadge">
+                                @mostUsedCategory (@mostUsedCategoryCount)
+                            </span>
+                            <span class="badge rounded-pill bg-warning-subtle text-warning px-3 py-2 smart-insight-badge">
+                                @approachingDeadlines near deadline
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly insight cards -->
+        <div class="col-lg-2 col-md-6">
+            <div class="card mini-insight-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small mb-1">Created This Week</div>
+                    <h4 class="fw-bold mb-0" id="createdThisWeekCount">@createdThisWeek</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <div class="card mini-insight-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small mb-1">Due This Week</div>
+                    <h4 class="fw-bold mb-0" id="dueThisWeekCount">@dueThisWeek</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main task statistics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" class="text-decoration-none">
+                <div class="card dashboard-stat-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-list-task"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Tasks</div>
+                            <h2 class="fw-bold mb-0" id="totalTasksCount">@total</h2>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" asp-route-statusFilter="Completed" class="text-decoration-none">
+                <div class="card dashboard-stat-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="bi bi-check2-circle"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Completed</div>
+                            <h2 class="fw-bold mb-0" id="completedTasksCount">@completed</h2>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" asp-route-statusFilter="PendingOpen" class="text-decoration-none">
+                <div class="card dashboard-stat-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Pending</div>
+                            <h2 class="fw-bold mb-0" id="pendingTasksCount">@pending</h2>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" asp-route-priorityFilter="High" class="text-decoration-none">
+                <div class="card dashboard-stat-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-flag"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">High Priority</div>
+                            <h2 class="fw-bold mb-0" id="highPriorityCount">@highPriority</h2>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Secondary dashboard statistics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" asp-route-dateFilter="Overdue" class="text-decoration-none">
+                <div class="card mini-insight-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted small mb-1">Overdue Tasks</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="fw-bold mb-0" id="overdueTasksCount">@overdueTasks</h4>
+                            <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2">Attention</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Task" asp-action="Index" asp-route-dateFilter="Today" class="text-decoration-none">
+                <div class="card mini-insight-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted small mb-1">Due Today</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="fw-bold mb-0" id="todayTasksCount">@todayTasks</h4>
+                            <span class="badge rounded-pill bg-warning-subtle text-warning px-3 py-2">Today</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Category" asp-action="Index" asp-route-status="Active" class="text-decoration-none">
+                <div class="card mini-insight-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted small mb-1">Active Categories</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="fw-bold mb-0" id="activeCategoriesCount">@activeCategories</h4>
+                            <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a asp-controller="Category" asp-action="Index" asp-route-linkedOnly="true" class="text-decoration-none">
+                <div class="card mini-insight-card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted small mb-1">Categories in Use</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="fw-bold mb-0" id="categoriesWithTasksCount">@categoriesWithTasks</h4>
+                            <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-2">Linked</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Focus tasks section -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+            <div>
+                <h4 class="fw-bold mb-1">Focus Tasks</h4>
+                <p class="text-muted small mb-0">Highlighted tasks with quick actions</p>
+            </div>
+
+            <!-- Toolbar for focus task filtering -->
+            <div class="focus-toolbar">
+                <div class="focus-toolbar-group" id="focusStatusGroup">
+                    <button type="button" class="focus-toolbar-btn @(focusStatus == "All" ? "active" : "")" data-status="All">All</button>
+                    <button type="button" class="focus-toolbar-btn @(focusStatus == "Open" ? "active" : "")" data-status="Open">Open</button>
+                    <button type="button" class="focus-toolbar-btn @(focusStatus == "Completed" ? "active" : "")" data-status="Completed">Completed</button>
+                </div>
+
+                <div class="focus-toolbar-group" id="focusCountGroup">
+                    <button type="button" class="focus-toolbar-btn @(focusCount == 6 ? "active" : "")" data-count="6">6</button>
+                    <button type="button" class="focus-toolbar-btn @(focusCount == 9 ? "active" : "")" data-count="9">9</button>
+                    <button type="button" class="focus-toolbar-btn @(focusCount == 12 ? "active" : "")" data-count="12">12</button>
+                </div>
+
+                <a asp-controller="Task" asp-action="Index" class="focus-view-btn">
+                    View Tasks
+                </a>
+            </div>
+        </div>
+
+        <!-- Focus task cards -->
+        <div class="row g-3" id="dashboardTaskCardsWrap">
+            @if (highlightTaskCards.Any())
+            {
+                @foreach (var task in highlightTaskCards)
+                {
+                    // Determines badge color based on task priority
+                    var priorityClass = task.Priority == "High"
+                    ? "bg-danger-subtle text-danger"
+                    : task.Priority == "Medium"
+                    ? "bg-warning-subtle text-warning"
+                    : "bg-success-subtle text-success";
+
+                    // Determines badge color based on task status
+                    var statusClass = task.Status == "Completed"
+                    ? "bg-success-subtle text-success"
+                    : task.Status == "In Progress"
+                    ? "bg-primary-subtle text-primary"
+                    : "bg-secondary-subtle text-secondary";
+
+                    // Uses category color if available, otherwise fallback color
+                    var categoryColor = (task.Category != null && !string.IsNullOrWhiteSpace(task.Category.Color))
+                    ? task.Category.Color
+                    : "#e9ecef";
+
+                    // Calculates time-based warning states
+                    var isOverdue = task.Status != "Completed" && task.DueDate.Date < DateTime.Today;
+                    var isDueSoon = task.Status != "Completed" &&
+                    task.DueDate.Date >= DateTime.Today &&
+                    task.DueDate.Date <= DateTime.Today.AddDays(2);
+
+                    // Applies card border highlight based on task urgency
+                    var taskBorderClass = isOverdue
+                    ? "focus-task-overdue"
+                    : isDueSoon
+                    ? "focus-task-warning"
+                    : "";
+
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card task-dashboard-card border-0 shadow-sm h-100 @taskBorderClass" id="dashboard-task-card-@task.Id">
+                            <div class="task-card-topbar" style="background:@categoryColor;"></div>
+
+                            <div class="card-body p-4 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                    <div class="flex-grow-1 min-w-0">
+                                        <h5 class="fw-bold mb-2 dashboard-task-title">@task.Title</h5>
+                                        <p class="text-muted mb-0 task-card-desc">
+                                            @(string.IsNullOrWhiteSpace(task.Description) ? "No description available." : task.Description)
+                                        </p>
+                                    </div>
+
+                                    <span class="badge rounded-pill px-3 py-2 @priorityClass dashboard-priority-badge">
+                                        @task.Priority
+                                    </span>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                                    <span class="badge rounded-pill px-3 py-2 @statusClass dashboard-task-status-badge"
+                                          id="dashboard-task-status-badge-@task.Id">
+                                        @task.Status
+                                    </span>
+
+                                    @if (task.Category != null)
+                                    {
+                                        <span class="badge rounded-pill px-3 py-2 task-category-chip text-dark">
+                                            @task.Category.Name
+                                        </span>
+                                    }
+
+                                    @if (isOverdue)
+                                    {
+                                        <span class="badge rounded-pill bg-danger text-white px-3 py-2">Overdue</span>
+                                    }
+                                    else if (isDueSoon)
+                                    {
+                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">Due Soon</span>
+                                    }
+                                </div>
+
+                                <div class="dashboard-task-meta small text-muted mb-4">
+                                    <strong>Due:</strong> @task.DueDate.ToString("dd MMM yyyy")
+                                </div>
+
+                                <div class="mt-auto d-flex justify-content-between align-items-center gap-2">
+                                    <!-- AJAX status toggle button -->
+                                    <button type="button"
+                                            class="btn btn-sm rounded-3 px-3 py-2 dashboard-task-toggle-btn @(task.Status == "Completed" ? "btn-outline-success" : "btn-dark")"
+                                            data-id="@task.Id">
+                                        @(task.Status == "Completed" ? "Mark as Pending" : "Mark as Completed")
+                                    </button>
+
+                                    <!-- Edit button -->
+                                    <a asp-controller="Task"
+                                       asp-action="Edit"
+                                       asp-route-id="@task.Id"
+                                       class="btn btn-sm btn-light border rounded-3 px-3 py-2 dashboard-edit-btn">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Empty state when no focus tasks are available -->
+                <div class="col-12">
+                    <div class="empty-box p-4 text-center">
+                        <div class="fw-semibold mb-2">No focus tasks found</div>
+                        <div class="text-muted small">Try changing the filter selection.</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Charts section -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100 dashboard-card">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Task Status Chart</h5>
+                    <p class="text-muted small mb-3">Completed and pending task distribution</p>
+
+                    <div class="chart-wrap">
+                        <canvas id="taskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100 dashboard-card">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Priority Distribution</h5>
+                    <p class="text-muted small mb-3">Your workload by priority level</p>
+
+                    <div class="chart-wrap">
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+
+                    <!-- Priority breakdown list -->
+                    <div class="mt-4 d-flex flex-column gap-2">
+                        <div class="priority-row">
+                            <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2">High</span>
+                            <strong>@highPriority</strong>
+                        </div>
+                        <div class="priority-row">
+                            <span class="badge rounded-pill bg-warning-subtle text-warning px-3 py-2">Medium</span>
+                            <strong>@mediumPriority</strong>
+                        </div>
+                        <div class="priority-row">
+                            <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2">Low</span>
+                            <strong>@lowPriority</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (categoryChartLabels.Any())
+    {
+        <!-- Category distribution chart -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm dashboard-card h-100">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-1">Category Distribution</h5>
+                        <p class="text-muted small mb-3">Task count distribution by category</p>
+
+                        <div class="chart-wrap category-chart-wrap">
+                            <canvas id="categoryDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Activity and task list sections -->
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm dashboard-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Recent Activity</h5>
+                            <p class="text-muted small mb-0">Latest audit log entries</p>
+                        </div>
+                    </div>
+
+                    @if (latestAuditLogs.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var log in latestAuditLogs.Take(8))
+                            {
+                                // Determines badge color based on action type
+                                var badgeClass = log.ActionType == "Create"
+                                ? "bg-success-subtle text-success"
+                                : log.ActionType == "Delete"
+                                ? "bg-danger-subtle text-danger"
+                                : "bg-primary-subtle text-primary";
+
+                                <div class="task-list-card p-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                                        <span class="badge rounded-pill px-3 py-2 @badgeClass">@log.ActionType</span>
+                                        <span class="text-muted small">@log.CreatedAt.ToString("dd MMM HH:mm")</span>
+                                    </div>
+                                    <div class="fw-semibold small mb-1">@log.EntityName</div>
+                                    <div class="text-muted small">@log.Description</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-box p-4 text-center">
+                            <div class="fw-semibold mb-2">No recent activity</div>
+                            <div class="text-muted small">Your latest actions will appear here.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming tasks list -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm dashboard-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Upcoming Tasks</h5>
+                            <p class="text-muted small mb-0">Tasks approaching their due date</p>
+                        </div>
+                        <a asp-controller="Task" asp-action="Index" class="btn btn-sm btn-outline-dark rounded-3">View All</a>
+                    </div>
+
+                    @if (upcomingTasks.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var task in upcomingTasks)
+                            {
+                                // Determines badge color based on task priority
+                                var priorityClass = task.Priority == "High"
+                                ? "bg-danger-subtle text-danger"
+                                : task.Priority == "Medium"
+                                ? "bg-warning-subtle text-warning"
+                                : "bg-success-subtle text-success";
+
+                                <div class="task-list-card p-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold mb-1">@task.Title</div>
+                                            <div class="text-muted small">Due: @task.DueDate.ToString("dd MMM yyyy")</div>
+                                        </div>
+                                        <span class="badge rounded-pill px-3 py-2 @priorityClass">@task.Priority</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-box p-4 text-center">
+                            <div class="fw-semibold mb-2">No upcoming tasks</div>
+                            <div class="text-muted small">Everything looks calm and organized.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent tasks list -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm dashboard-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Recent Tasks</h5>
+                            <p class="text-muted small mb-0">Recently added tasks</p>
+                        </div>
+                        <a asp-controller="Task" asp-action="Create" class="btn btn-sm btn-dark rounded-3">New Task</a>
+                    </div>
+
+                    @if (recentTasks.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var task in recentTasks)
+                            {
+                                // Determines badge color based on task status
+                                var statusClass = task.Status == "Completed"
+                                ? "bg-success-subtle text-success"
+                                : task.Status == "In Progress"
+                                ? "bg-primary-subtle text-primary"
+                                : "bg-secondary-subtle text-secondary";
+
+                                <div class="task-list-card p-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold mb-1">@task.Title</div>
+                                            <div class="text-muted small">
+                                                @(string.IsNullOrWhiteSpace(task.Description) ? "No description" : task.Description)
+                                            </div>
+                                        </div>
+                                        <span class="badge rounded-pill px-3 py-2 @statusClass">@task.Status</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-box p-4 text-center">
+                            <div class="fw-semibold mb-2">No recent tasks</div>
+                            <div class="text-muted small">Create a new task to start building your workflow.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main hero section background and layout */
+    .dashboard-hero {
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 55%, #20c997 100%);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+    }
+
+        /* Decorative circles inside the hero section */
+        .dashboard-hero::before,
+        .dashboard-hero::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.10);
+        }
+
+        .dashboard-hero::before {
+            width: 180px;
+            height: 180px;
+            top: -40px;
+            right: -30px;
+        }
+
+        .dashboard-hero::after {
+            width: 120px;
+            height: 120px;
+            bottom: -35px;
+            left: -20px;
+        }
+
+        /* Ensures hero content stays above decorative shapes */
+        .dashboard-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    /* Hero description text */
+    .dashboard-hero-text {
+        color: rgba(255, 255, 255, 0.88);
+        max-width: 680px;
+    }
+
+    /* Small summary card inside the hero section */
+    .hero-mini-card {
+        background: rgba(255, 255, 255, 0.92);
+        color: #1f2937;
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.10);
+        border-radius: 22px;
+    }
+
+    /* Meta text below the completion bar */
+    .hero-mini-meta {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    /* Completion progress container */
+    .completion-progress {
+        height: 10px;
+        background-color: rgba(13, 110, 253, 0.12);
+        overflow: hidden;
+    }
+
+    /* Completion progress bar */
+    .completion-progress-bar {
+        background: linear-gradient(90deg, #6f42c1, #0d6efd, #20c997);
+        transition: width 0.8s ease-in-out;
+    }
+
+    /* Shared card styling */
+    .dashboard-stat-card,
+    .dashboard-card,
+    .task-dashboard-card,
+    .mini-insight-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 22px !important;
+        transition: all 0.25s ease;
+    }
+
+        /* Shared hover animation for cards */
+        .dashboard-stat-card:hover,
+        .dashboard-card:hover,
+        .task-dashboard-card:hover,
+        .mini-insight-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12) !important;
+        }
+
+    /* Statistic icon container */
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    /* Standard chart wrapper height */
+    .chart-wrap {
+        position: relative;
+        min-height: 320px;
+    }
+
+    /* Category chart custom height */
+    .category-chart-wrap {
+        min-height: 360px;
+    }
+
+    /* Priority breakdown row */
+    .priority-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #eef1f6;
+        border-radius: 18px;
+        padding: 12px 14px;
+        background: #fff;
+    }
+
+    /* Shared task/activity list card */
+    .task-list-card {
+        border: 1px solid #eef1f6;
+        background: #fff;
+        border-radius: 18px;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for list cards */
+        .task-list-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+    /* Empty state box */
+    .empty-box {
+        border: 1px dashed #dbe3f0;
+        background: #fff;
+        border-radius: 18px;
+    }
+
+    /* Focus task card base */
+    .task-dashboard-card {
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Colored topbar showing category color */
+    .task-card-topbar {
+        height: 8px;
+        width: 100%;
+    }
+
+    /* Focus task title styling */
+    .dashboard-task-title {
+        font-size: 1.45rem;
+        line-height: 1.3;
+        min-height: 58px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Focus task description styling */
+    .task-card-desc {
+        min-height: 48px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.5;
+    }
+
+    /* Priority badge styling */
+    .dashboard-priority-badge {
+        flex-shrink: 0;
+        font-weight: 700;
+    }
+
+    /* Category chip styling */
+    .task-category-chip {
+        border: none;
+        background: #f3f4f6 !important;
+        font-weight: 600;
+    }
+
+    /* Metadata text under task cards */
+    .dashboard-task-meta {
+        font-size: 0.95rem;
+    }
+
+    /* Focus task toggle button */
+    .dashboard-task-toggle-btn {
+        min-width: 170px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for focus task toggle button */
+        .dashboard-task-toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+    /* Edit button minimum width */
+    .dashboard-edit-btn {
+        min-width: 74px;
+    }
+
+    /* Focus toolbar wrapper */
+    .focus-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Focus toolbar grouped buttons */
+    .focus-toolbar-group {
+        display: inline-flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 4px;
+        gap: 4px;
+    }
+
+    /* Focus toolbar button */
+    .focus-toolbar-btn {
+        border: none;
+        background: transparent;
+        color: #374151;
+        font-weight: 600;
+        min-width: 64px;
+        height: 40px;
+        border-radius: 12px;
+        padding: 0 16px;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover state for focus toolbar button */
+        .focus-toolbar-btn:hover {
+            background: #eef2f7;
+        }
+
+        /* Active state for focus toolbar button */
+        .focus-toolbar-btn.active {
+            background: #1f2937;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+        }
+
+    /* View tasks button in the toolbar */
+    .focus-view-btn {
+        height: 40px;
+        padding: 0 18px;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #1f2937;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover state for the view tasks button */
+        .focus-view-btn:hover {
+            background: #f8fafc;
+            color: #111827;
+        }
+
+    /* Disabled visual state while toolbar is loading */
+    .focus-toolbar-loading {
+        opacity: 0.65;
+        pointer-events: none;
+    }
+
+    /* Shared smart insight badge style */
+    .smart-insight-badge {
+        font-weight: 600;
+    }
+
+    /* Highlight for overdue focus task cards */
+    .focus-task-overdue {
+        border-left: 4px solid #dc3545;
+        background: rgba(220, 53, 69, 0.04);
+    }
+
+    /* Highlight for due-soon focus task cards */
+    .focus-task-warning {
+        border-left: 4px solid #ffc107;
+        background: rgba(255, 193, 7, 0.05);
+    }
+
+    /* Tablet chart height adjustments */
+    @@media (max-width: 991.98px) {
+        .chart-wrap,
+        .category-chart-wrap {
+            min-height: 280px;
+        }
+    }
+
+    /* Mobile layout adjustments */
+    @@media (max-width: 767.98px) {
+        .dashboard-task-title {
+            font-size: 1.2rem;
+            min-height: auto;
+        }
+
+        .task-card-desc {
+            min-height: auto;
+        }
+
+        .dashboard-task-toggle-btn {
+            min-width: 150px;
+        }
+
+        .focus-toolbar {
+            width: 100%;
+        }
+
+        .focus-toolbar-group {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .focus-toolbar-btn {
+            flex: 1 1 0;
+            min-width: unset;
+        }
+
+        .focus-view-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    // Initializes dashboard interactions after the DOM is ready
+    document.addEventListener("DOMContentLoaded", async function () {
+        // Reads the anti-forgery token used for secure AJAX requests
+        const tokenInput = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : "";
+
+        // Hero section DOM references
+        const heroCompletedText = document.getElementById("heroCompletedText");
+        const heroPendingText = document.getElementById("heroPendingText");
+
+        // Main statistic DOM references
+        const totalTasksCount = document.getElementById("totalTasksCount");
+        const completedTasksCount = document.getElementById("completedTasksCount");
+        const pendingTasksCount = document.getElementById("pendingTasksCount");
+        const completionRateText = document.getElementById("completionRateText");
+        const progressBar = document.querySelector(".completion-progress-bar");
+        const pageAlertContainer = document.getElementById("pageAlertContainer");
+
+        // Additional statistic DOM references
+        const highPriorityCount = document.getElementById("highPriorityCount");
+        const overdueTasksCount = document.getElementById("overdueTasksCount");
+        const todayTasksCount = document.getElementById("todayTasksCount");
+        const activeCategoriesCount = document.getElementById("activeCategoriesCount");
+        const categoriesWithTasksCount = document.getElementById("categoriesWithTasksCount");
+        const createdThisWeekCount = document.getElementById("createdThisWeekCount");
+        const dueThisWeekCount = document.getElementById("dueThisWeekCount");
+        const dashboardInsightText = document.getElementById("dashboardInsightText");
+        const mostUsedCategoryBadge = document.getElementById("mostUsedCategoryBadge");
+
+        // Chart canvas references
+        const taskChartCtx = document.getElementById("taskChart");
+        const priorityChartCtx = document.getElementById("priorityChart");
+        const categoryDistributionCtx = document.getElementById("categoryDistributionChart");
+
+        // Focus task section references
+        const dashboardTaskCardsWrap = document.getElementById("dashboardTaskCardsWrap");
+        const focusToolbar = document.querySelector(".focus-toolbar");
+
+        // Current toolbar state
+        let currentFocusStatus = "@focusStatus";
+        let currentFocusCount = @focusCount;
+
+        // Displays a dismissible alert message at the top of the page
+        function showPageAlert(type, message) {
+            pageAlertContainer.innerHTML =
+                '<div class="alert alert-' + type + ' alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">' +
+                    message +
+                    '<button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                '</div>';
+        }
+
+        // Displays a temporary toast notification
+        function showToast(message) {
+            const div = document.createElement("div");
+            div.className = "position-fixed bottom-0 end-0 p-3";
+            div.style.zIndex = "9999";
+
+            div.innerHTML = `
+                <div class="toast show align-items-center text-bg-dark border-0">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 2000);
+        }
+
+        // Escapes HTML-sensitive characters before rendering dynamic content
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return "";
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        // Returns the badge class for a given priority value
+        function getPriorityBadgeClass(priority) {
+            if (priority === "High") return "bg-danger-subtle text-danger";
+            if (priority === "Medium") return "bg-warning-subtle text-warning";
+            return "bg-success-subtle text-success";
+        }
+
+        // Returns the badge class for a given status value
+        function getStatusBadgeClass(status) {
+            if (status === "Completed") return "bg-success-subtle text-success";
+            if (status === "In Progress") return "bg-primary-subtle text-primary";
+            return "bg-secondary-subtle text-secondary";
+        }
+
+        // Sets the active state for toolbar buttons
+        function setActiveToolbarButton(groupSelector, attributeName, value) {
+            document.querySelectorAll(`${groupSelector} .focus-toolbar-btn`).forEach(btn => {
+                btn.classList.toggle("active", btn.dataset[attributeName] == value);
+            });
+        }
+
+        // Renders the focus task cards dynamically
+        function renderFocusTasks(tasks) {
+            if (!dashboardTaskCardsWrap) return;
+
+            if (!tasks || tasks.length === 0) {
+                dashboardTaskCardsWrap.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-box p-4 text-center">
+                            <div class="fw-semibold mb-2">No focus tasks found</div>
+                            <div class="text-muted small">Try changing the filter selection.</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+
+            tasks.forEach(task => {
+                const priorityClass = getPriorityBadgeClass(task.priority);
+                const statusClass = getStatusBadgeClass(task.status);
+                const isCompleted = task.status === "Completed";
+                const cardClass = task.isOverdue
+                    ? "focus-task-overdue"
+                    : task.isDueSoon
+                        ? "focus-task-warning"
+                        : "";
+
+                html += `
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card task-dashboard-card border-0 shadow-sm h-100 ${cardClass}" id="dashboard-task-card-${task.id}">
+                            <div class="task-card-topbar" style="background:${escapeHtml(task.categoryColor)};"></div>
+
+                            <div class="card-body p-4 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                    <div class="flex-grow-1 min-w-0">
+                                        <h5 class="fw-bold mb-2 dashboard-task-title">${escapeHtml(task.title)}</h5>
+                                        <p class="text-muted mb-0 task-card-desc">${escapeHtml(task.description)}</p>
+                                    </div>
+
+                                    <span class="badge rounded-pill px-3 py-2 ${priorityClass} dashboard-priority-badge">
+                                        ${escapeHtml(task.priority)}
+                                    </span>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                                    <span class="badge rounded-pill px-3 py-2 ${statusClass} dashboard-task-status-badge"
+                                          id="dashboard-task-status-badge-${task.id}">
+                                        ${escapeHtml(task.status)}
+                                    </span>
+
+                                    <span class="badge rounded-pill px-3 py-2 text-dark task-category-chip">
+                                        ${escapeHtml(task.categoryName)}
+                                    </span>
+
+                                    ${task.isOverdue
+                                        ? `<span class="badge rounded-pill bg-danger text-white px-3 py-2">Overdue</span>`
+                                        : task.isDueSoon
+                                            ? `<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Due Soon</span>`
+                                            : ``}
+                                </div>
+
+                                <div class="dashboard-task-meta small text-muted mb-4">
+                                    <strong>Due:</strong> ${escapeHtml(task.dueDate)}
+                                </div>
+
+                                <div class="mt-auto d-flex justify-content-between align-items-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-sm rounded-3 px-3 py-2 dashboard-task-toggle-btn ${isCompleted ? "btn-outline-success" : "btn-dark"}"
+                                            data-id="${task.id}">
+                                        ${isCompleted ? "Mark as Pending" : "Mark as Completed"}
+                                    </button>
+
+                                    <a href="/Task/Edit/${task.id}"
+                                       class="btn btn-sm btn-light border rounded-3 px-3 py-2 dashboard-edit-btn">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            dashboardTaskCardsWrap.innerHTML = html;
+            bindDashboardFocusTaskToggleEvents();
+        }
+
+        // Task status chart instance
+        let taskChart = null;
+
+        // Initializes the completed/pending doughnut chart
+        if (taskChartCtx) {
+            taskChart = new Chart(taskChartCtx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Completed", "Pending"],
+                    datasets: [{
+                        data: [@completed, @pending],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "68%",
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initializes the priority distribution bar chart
+        if (priorityChartCtx) {
+            new Chart(priorityChartCtx, {
+                type: "bar",
+                data: {
+                    labels: ["High", "Medium", "Low"],
+                    datasets: [{
+                        label: "Tasks",
+                        data: [@highPriority, @mediumPriority, @lowPriority],
+                        borderRadius: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initializes the category distribution doughnut chart
+        if (categoryDistributionCtx) {
+            new Chart(categoryDistributionCtx, {
+                type: "doughnut",
+                data: {
+                    labels: @Html.Raw(JsonSerializer.Serialize(categoryChartLabels)),
+                    datasets: [{
+                        data: @Html.Raw(JsonSerializer.Serialize(categoryChartCounts)),
+                        backgroundColor: @Html.Raw(JsonSerializer.Serialize(categoryChartColors)),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "62%",
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
+                    }
+                }
+            });
+        }
+
+        // Loads and refreshes dashboard summary values via AJAX
+        async function updateDashboardStats() {
+            try {
+                const response = await fetch("/Dashboard/GetDashboardSummary", {
+                    method: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Summary request failed.");
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showPageAlert("danger", data.message || "Dashboard summary could not be loaded.");
+                    return;
+                }
+
+                // Updates all summary values in the DOM
+                if (totalTasksCount) totalTasksCount.textContent = data.total;
+                if (completedTasksCount) completedTasksCount.textContent = data.completed;
+                if (pendingTasksCount) pendingTasksCount.textContent = data.pending;
+                if (completionRateText) completionRateText.textContent = data.completionRate + "%";
+
+                if (heroCompletedText) heroCompletedText.textContent = `${data.completed} completed`;
+                if (heroPendingText) heroPendingText.textContent = `${data.pending} open`;
+
+                if (highPriorityCount) highPriorityCount.textContent = data.highPriority;
+                if (overdueTasksCount) overdueTasksCount.textContent = data.overdueTasks;
+                if (todayTasksCount) todayTasksCount.textContent = data.todayTasks;
+                if (activeCategoriesCount) activeCategoriesCount.textContent = data.activeCategories;
+                if (categoriesWithTasksCount) categoriesWithTasksCount.textContent = data.categoriesWithTasks;
+                if (createdThisWeekCount) createdThisWeekCount.textContent = data.createdThisWeek;
+                if (dueThisWeekCount) dueThisWeekCount.textContent = data.dueThisWeek;
+                if (dashboardInsightText) dashboardInsightText.textContent = data.insightText;
+                if (mostUsedCategoryBadge) mostUsedCategoryBadge.textContent = `${data.mostUsedCategory} (${data.mostUsedCategoryCount})`;
+
+                // Updates completion progress bar
+                if (progressBar) {
+                    progressBar.setAttribute("aria-valuenow", data.completionRate);
+                    progressBar.style.width = data.completionRate + "%";
+                }
+
+                // Updates task status chart
+                if (taskChart) {
+                    taskChart.data.datasets[0].data = [data.completed, data.pending];
+                    taskChart.update();
+                }
+            } catch (error) {
+                console.error(error);
+                showPageAlert("danger", "An error occurred while updating dashboard summary.");
+            }
+        }
+
+        // Loads focus task cards via AJAX based on current toolbar settings
+        async function loadFocusTasks() {
+            try {
+                if (focusToolbar) {
+                    focusToolbar.classList.add("focus-toolbar-loading");
+                }
+
+                const response = await fetch(`/Dashboard/GetFocusTasks?focusStatus=${encodeURIComponent(currentFocusStatus)}&focusCount=${currentFocusCount}`, {
+                    method: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Focus tasks request failed.");
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showPageAlert("danger", data.message || "Focus tasks could not be loaded.");
+                    return;
+                }
+
+                renderFocusTasks(data.tasks);
+                setActiveToolbarButton("#focusStatusGroup", "status", currentFocusStatus);
+                setActiveToolbarButton("#focusCountGroup", "count", currentFocusCount);
+            } catch (error) {
+                console.error(error);
+                showPageAlert("danger", "An error occurred while loading focus tasks.");
+            } finally {
+                if (focusToolbar) {
+                    focusToolbar.classList.remove("focus-toolbar-loading");
+                }
+            }
+        }
+
+        // Binds AJAX toggle behavior to focus task action buttons
+        function bindDashboardFocusTaskToggleEvents() {
+            document.querySelectorAll(".dashboard-task-toggle-btn").forEach(function (btn) {
+                btn.addEventListener("click", async function () {
+                    const button = this;
+                    const id = parseInt(button.getAttribute("data-id"));
+
+                    button.disabled = true;
+                    button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Updating`;
+
+                    try {
+                        const response = await fetch("/Task/ToggleStatusAjax", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                                "RequestVerificationToken": token,
+                                "X-Requested-With": "XMLHttpRequest"
+                            },
+                            body: new URLSearchParams({ id: id })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error("Status request failed.");
+                        }
+
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            showPageAlert("danger", data.message || "Status update failed.");
+                            return;
+                        }
+
+                        showToast("Task updated");
+                        await updateDashboardStats();
+                        await loadFocusTasks();
+                    } catch (error) {
+                        console.error(error);
+                        showPageAlert("danger", "An error occurred while updating task status.");
+                    } finally {
+                        button.disabled = false;
+                    }
+                });
+            });
+        }
+
+        // Binds toolbar status filter buttons
+        document.querySelectorAll("#focusStatusGroup .focus-toolbar-btn").forEach(btn => {
+            btn.addEventListener("click", async function () {
+                currentFocusStatus = this.dataset.status;
+                await loadFocusTasks();
+            });
+        });
+
+        // Binds toolbar count filter buttons
+        document.querySelectorAll("#focusCountGroup .focus-toolbar-btn").forEach(btn => {
+            btn.addEventListener("click", async function () {
+                currentFocusCount = parseInt(this.dataset.count);
+                await loadFocusTasks();
+            });
+        });
+
+        // Binds initial task toggle events for server-rendered cards
+        bindDashboardFocusTaskToggleEvents();
+
+        // Animates the initial progress bar width
+        if (progressBar) {
+            const initialValue = @completionRate;
+            setTimeout(function () {
+                progressBar.style.width = initialValue + "%";
+            }, 200);
+        }
+
+        // Loads fresh dashboard data on page load
+        await updateDashboardStats();
+        await loadFocusTasks();
+    });
+</script>

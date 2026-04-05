@@ -1,0 +1,303 @@
+﻿@page
+@using SmartTaskManagementSystem.Areas.Identity.Pages.Account.Manage
+// Imports Manage namespace for navigation helpers (e.g., ManageNavPages)
+
+@model EmailModel
+// Binds the Razor Page to EmailModel (code-behind)
+
+@{
+    // Page title shown in browser tab
+    ViewData["Title"] = "Email";
+
+    // Sets active navigation item in sidebar
+    ViewData["ActivePage"] = ManageNavPages.Email;
+}
+
+<style>
+    /* Layout grid: sidebar (left) + main content (right) */
+    .manage-page-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    /* Shared card design (sidebar + main content) */
+    .manage-side-card,
+    .manage-main-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 28px;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+    }
+
+    /* Sidebar card styling (sticky on desktop) */
+    .manage-side-card {
+        padding: 28px 24px;
+        position: sticky;
+        top: 24px;
+    }
+
+    /* Main content card styling */
+    .manage-main-card {
+        padding: 32px;
+    }
+
+    /* Icon container for section header */
+    .manage-icon-box {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+        box-shadow: 0 14px 30px rgba(13, 110, 253, 0.20);
+        margin-bottom: 18px;
+    }
+
+    /* Section title */
+    .manage-card-title {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    /* Informational text */
+    .manage-note {
+        color: #6b7280;
+        line-height: 1.7;
+    }
+
+    /* Sidebar tips container */
+    .manage-side-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    /* Individual sidebar tip item */
+    .manage-side-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid #eef1f6;
+        color: #4b5563;
+        font-size: 0.95rem;
+    }
+
+    /* Top info strip showing current email */
+    .manage-top-strip {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border: 1px solid #eef1f6;
+        border-radius: 18px;
+        background: #ffffff;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    /* Label text (e.g., "Current email") */
+    .manage-info-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Value text (actual email) */
+    .manage-info-value {
+        font-weight: 700;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    /* Badge base style */
+    .manage-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    /* Email confirmed badge */
+    .manage-badge-confirmed {
+        background: #ecfdf3;
+        color: #047857;
+        border: 1px solid #d1fae5;
+    }
+
+    /* Email not confirmed badge */
+    .manage-badge-pending {
+        background: #fff7ed;
+        color: #c2410c;
+        border: 1px solid #fed7aa;
+    }
+
+    /* Input styling */
+    .form-floating > .form-control {
+        border-radius: 18px;
+        min-height: 58px;
+    }
+
+    /* Primary action button */
+    .manage-btn {
+        min-height: 54px;
+        border-radius: 16px;
+        font-weight: 700;
+    }
+
+    /* Secondary button (e.g., verification) */
+    .manage-secondary-btn {
+        min-height: 52px;
+        border-radius: 16px;
+        font-weight: 700;
+    }
+
+    /* Helper info box */
+    .manage-helper-box {
+        margin-top: 22px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid #eef1f6;
+    }
+
+    /* Responsive layout adjustments */
+    @@media (max-width: 991.98px) {
+        .manage-page-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .manage-side-card {
+            position: static;
+        }
+    }
+</style>
+
+<!-- Displays success or error messages -->
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div class="manage-page-grid">
+
+    <!-- SIDEBAR: Email info and tips -->
+    <div class="manage-side-card">
+        <!-- Section icon -->
+        <div class="manage-icon-box">
+            <i class="bi bi-envelope"></i>
+        </div>
+
+        <!-- Section title -->
+        <h2 class="manage-card-title">Email Settings</h2>
+
+        <!-- Description -->
+        <p class="manage-note">
+            You can manage your current email address and update it with a new one if needed.
+        </p>
+
+        <!-- Informational tips -->
+        <div class="manage-side-list">
+            <div class="manage-side-item">
+                <i class="bi bi-check-circle text-success"></i>
+                <span>Email information is important for account access.</span>
+            </div>
+            <div class="manage-side-item">
+                <i class="bi bi-shield-check text-primary"></i>
+                <span>A verified email provides more secure account management.</span>
+            </div>
+            <div class="manage-side-item">
+                <i class="bi bi-arrow-repeat text-warning"></i>
+                <span>Email updates may require verification after change.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT: Email update form -->
+    <div class="manage-main-card">
+
+        <!-- Current email info strip -->
+        <div class="manage-top-strip">
+            <div>
+                <div class="manage-info-label">Current email</div>
+                <div class="manage-info-value">@Model.Email</div>
+            </div>
+
+            // Shows confirmation status badge
+            @if (Model.IsEmailConfirmed)
+            {
+                <div class="manage-badge manage-badge-confirmed">
+                    <i class="bi bi-check-circle"></i>
+                    Confirmed
+                </div>
+            }
+            else
+            {
+                <div class="manage-badge manage-badge-pending">
+                    <i class="bi bi-exclamation-circle"></i>
+                    Not Confirmed
+                </div>
+            }
+        </div>
+
+        <!-- Email update form -->
+        <form id="email-form" method="post" novalidate>
+
+            <!-- Validation summary -->
+            <div asp-validation-summary="All"
+                 class="alert alert-danger rounded-4 border-0 shadow-sm mb-4"></div>
+
+            <!-- Current email (readonly/disabled) -->
+            <div class="form-floating mb-3">
+                <input asp-for="Email" class="form-control" disabled />
+                <label asp-for="Email">Current Email</label>
+            </div>
+
+            // Show verification button if email is not confirmed
+            @if (!Model.IsEmailConfirmed)
+            {
+                <button id="email-verification"
+                        type="submit"
+                        asp-page-handler="SendVerificationEmail"
+                        class="btn btn-outline-dark manage-secondary-btn w-100 mb-3">
+                    Send Verification Email
+                </button>
+            }
+
+            <!-- New email input -->
+            <div class="form-floating mb-3">
+                <input asp-for="Input.NewEmail" class="form-control" />
+                <label asp-for="Input.NewEmail">New Email</label>
+                <span asp-validation-for="Input.NewEmail" class="text-danger small"></span>
+            </div>
+
+            <!-- Submit button -->
+            <button id="change-email-button"
+                    type="submit"
+                    asp-page-handler="ChangeEmail"
+                    class="btn btn-dark manage-btn w-100">
+                Update Email
+            </button>
+        </form>
+
+        <!-- Helper note -->
+        <div class="manage-helper-box">
+            <div class="manage-helper-title">Quick note</div>
+            <p class="manage-helper-text">
+                If you are using an unverified email, it is better to send a verification link first.
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Enables client-side validation -->
+    <partial name="_ValidationScriptsPartial" />
+}

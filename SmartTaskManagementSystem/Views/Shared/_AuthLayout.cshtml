@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <!-- Basic document metadata -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Dynamic page title -->
+    <title>@ViewData["Title"] - SmartTaskManagementSystem</title>
+
+    <!-- Core stylesheets -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        /* Main background wrapper for authentication pages */
+        .auth-layout-body {
+            background: linear-gradient(180deg, #f5f7fb 0%, #eef3ff 100%);
+            min-height: 100vh;
+        }
+
+        /* Outer spacing for the top navigation area */
+        .auth-topbar-wrap {
+            padding: 18px 0 12px;
+        }
+
+        /* Width container for the topbar */
+        .auth-topbar-box {
+            max-width: 1680px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* Main authentication topbar styling */
+        .auth-topbar {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid #eef1f6;
+            border-radius: 30px;
+            padding: 16px 22px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* Brand area containing logo and project name */
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            text-decoration: none;
+        }
+
+        /* Brand logo box */
+        .auth-brand-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+            color: #fff;
+            font-size: 1.55rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 12px 25px rgba(13, 110, 253, 0.20);
+        }
+
+        /* Brand text next to the logo */
+        .auth-brand-text {
+            color: #111827;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        /* Navbar collapse alignment */
+        .auth-navbar-collapse {
+            align-items: center;
+        }
+
+        /* Right-side action container */
+        .auth-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        /* Secondary topbar link styling */
+        .auth-topbar-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 12px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+            /* Hover state for topbar links */
+            .auth-topbar-link:hover {
+                color: #1d4ed8;
+                background: rgba(37, 99, 235, 0.08);
+            }
+
+        /* Primary call-to-action button in the topbar */
+        .auth-topbar-btn {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            padding: 12px 24px;
+            border-radius: 999px;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            /* Hover state for primary topbar button */
+            .auth-topbar-btn:hover {
+                color: #fff;
+                transform: translateY(-1px);
+                box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+            }
+
+        /* Mobile navbar toggle button */
+        .auth-navbar-toggler {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 14px;
+            padding: 8px 12px;
+            background: rgba(37, 99, 235, 0.06);
+            box-shadow: none !important;
+        }
+
+            /* Icon inside the navbar toggle button */
+            .auth-navbar-toggler i {
+                color: #111827;
+                font-size: 1.4rem;
+                line-height: 1;
+            }
+
+        /* Main content area below the topbar */
+        .auth-main {
+            padding-bottom: 24px;
+        }
+
+        /* Tablet and small desktop adjustments */
+        @@media (max-width: 992px) {
+            .auth-topbar {
+                padding: 14px 16px;
+                border-radius: 24px;
+            }
+
+            .auth-brand-text {
+                font-size: 1rem;
+            }
+
+            .auth-brand-logo {
+                width: 48px;
+                height: 48px;
+                font-size: 1.35rem;
+            }
+
+            .auth-navbar-collapse {
+                margin-top: 14px;
+                padding-top: 14px;
+                border-top: 1px solid rgba(0, 0, 0, 0.06);
+            }
+
+            .auth-topbar-actions {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .auth-topbar-link {
+                text-align: center;
+                background: rgba(37, 99, 235, 0.06);
+            }
+
+            .auth-topbar-btn {
+                width: 100%;
+            }
+        }
+
+        /* Mobile-specific typography and spacing adjustments */
+        @@media (max-width: 480px) {
+            .auth-topbar-box {
+                padding: 0 10px;
+            }
+
+            .auth-brand-text {
+                font-size: 0.92rem;
+            }
+
+            .auth-topbar-link,
+            .auth-topbar-btn {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body class="auth-layout-body">
+
+    <!-- Authentication page header -->
+    <header class="auth-topbar-wrap">
+        <div class="auth-topbar-box">
+            <nav class="navbar navbar-expand-lg auth-topbar">
+                <div class="container-fluid px-0">
+                    <!-- Brand link back to the public home page -->
+                    <a class="auth-brand" asp-controller="Home" asp-action="Index">
+                        <span class="auth-brand-logo">ST</span>
+                        <span class="auth-brand-text">SmartTaskManagementSystem</span>
+                    </a>
+
+                    <!-- Mobile navigation toggle -->
+                    <button class="navbar-toggler auth-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#authNavbar"
+                            aria-controls="authNavbar" aria-expanded="false" aria-label="Menüyü Aç">
+                        <i class="bi bi-list"></i>
+                    </button>
+
+                    <!-- Collapsible navigation area -->
+                    <div class="collapse navbar-collapse auth-navbar-collapse" id="authNavbar">
+                        <div class="ms-auto auth-topbar-actions">
+                            <!-- Login link -->
+                            <a class="auth-topbar-link" asp-area="Identity" asp-page="/Account/Login">Login</a>
+
+                            <!-- Register call-to-action button -->
+                            <a class="auth-topbar-btn" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main render area for authentication pages -->
+    <main class="auth-main">
+        @RenderBody()
+    </main>
+
+    <!-- Core JavaScript bundle -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Optional page-specific scripts -->
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

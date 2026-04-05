@@ -1,0 +1,189 @@
+﻿@using SmartTaskManagementSystem.Areas.Identity.Pages.Account.Manage
+
+<!-- Sidebar navigation card for account management -->
+<div class="manage-nav-card">
+
+    <!-- Header section with icon and title -->
+    <div class="manage-nav-header">
+        <div class="manage-nav-icon">
+            <i class="bi bi-gear"></i>
+        </div>
+        <div>
+            <div class="manage-nav-title">Account Settings</div>
+            <div class="manage-nav-subtitle">Manage your profile and security</div>
+        </div>
+    </div>
+
+    <!-- Navigation menu for account management pages -->
+    <ul class="nav nav-pills flex-column gap-2 manage-nav">
+
+        <!-- Profile page link -->
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" asp-page="./Index">
+                <span class="manage-nav-link-icon">
+                    <i class="bi bi-person"></i>
+                </span>
+                <span>Profile</span>
+            </a>
+        </li>
+
+        <!-- Email settings page link -->
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" asp-page="./Email">
+                <span class="manage-nav-link-icon">
+                    <i class="bi bi-envelope"></i>
+                </span>
+                <span>Email</span>
+            </a>
+        </li>
+
+        <!-- Change password page link -->
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" asp-page="./ChangePassword">
+                <span class="manage-nav-link-icon">
+                    <i class="bi bi-shield-lock"></i>
+                </span>
+                <span>Password</span>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+<style>
+    /* Main container for sidebar navigation */
+    .manage-nav-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    /* Header section styling */
+    .manage-nav-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #eef1f6;
+    }
+
+    /* Icon container in header */
+    .manage-nav-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+        color: #fff;
+        font-size: 1.15rem;
+        box-shadow: 0 10px 22px rgba(13, 110, 253, 0.18);
+        flex-shrink: 0;
+    }
+
+    /* Title text */
+    .manage-nav-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #111827;
+        line-height: 1.2;
+    }
+
+    /* Subtitle text */
+    .manage-nav-subtitle {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    /* Navigation link base styling */
+    .manage-nav .nav-link {
+        border-radius: 18px;
+        padding: 13px 16px;
+        font-weight: 700;
+        color: #374151;
+        transition: all 0.22s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 54px;
+        border: 1px solid transparent;
+    }
+
+        /* Hover effect for navigation links */
+        .manage-nav .nav-link:hover {
+            background: #f3f6fb;
+            color: #111827;
+            border-color: #e8edf5;
+            transform: translateX(2px);
+        }
+
+        /* Active navigation link styling */
+        .manage-nav .nav-link.active {
+            background: linear-gradient(135deg, #0d6efd 0%, #3b82f6 100%);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(13, 110, 253, 0.22);
+            border-color: transparent;
+        }
+
+    /* Icon inside navigation link */
+    .manage-nav-link-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.08);
+        color: #0d6efd;
+        font-size: 1rem;
+        flex-shrink: 0;
+        transition: all 0.22s ease;
+    }
+
+    /* Hover effect for icon */
+    .manage-nav .nav-link:hover .manage-nav-link-icon {
+        background: rgba(13, 110, 253, 0.12);
+    }
+
+    /* Active state for icon */
+    .manage-nav .nav-link.active .manage-nav-link-icon {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+    }
+
+    /* Responsive adjustments for mobile */
+    @@media (max-width: 576px) {
+        .manage-nav-card {
+            padding: 16px;
+            border-radius: 20px;
+        }
+
+        .manage-nav-header {
+            gap: 12px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+        }
+
+        .manage-nav-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+        }
+
+        .manage-nav .nav-link {
+            padding: 12px 14px;
+            border-radius: 16px;
+        }
+
+        .manage-nav-link-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+        }
+    }
+</style>

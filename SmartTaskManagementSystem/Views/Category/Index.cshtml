@@ -1,0 +1,1097 @@
+﻿@model List<SmartTaskManagementSystem.Models.Category>
+
+@{
+    // Sets the page title for the current view
+    ViewData["Title"] = "Categories";
+
+    // Calculates initial summary values on the server side
+    var total = Model?.Count ?? 0;
+    var active = Model?.Count(x => x.IsActive) ?? 0;
+    var passive = Model?.Count(x => !x.IsActive) ?? 0;
+
+    // Stores initial filter states coming from the server
+    var initialStatus = ViewBag.InitialStatus?.ToString() ?? "All";
+    var initialLinkedOnly = ViewBag.InitialLinkedOnly != null && (bool)ViewBag.InitialLinkedOnly;
+    var initialSearch = ViewBag.InitialSearch?.ToString() ?? "";
+
+    // Contains category IDs that are currently linked to tasks
+    var linkedCategoryIds = ViewBag.LinkedCategoryIds as HashSet<int> ?? new HashSet<int>();
+
+    // Calculates linked and unused category counts
+    var linkedCount = Model?.Count(x => linkedCategoryIds.Contains(x.Id)) ?? 0;
+    var unusedCount = total - linkedCount;
+
+    // Generates the initial insight text shown in the UI
+    var insightText = linkedCount > 0
+        ? $"{linkedCount} categories are currently linked to tasks."
+        : "No category is linked to tasks yet.";
+}
+
+<style>
+    /* Removes blur effects from the page background when a modal is open */
+    body.modal-open .content-wrapper {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: white !important;
+    }
+
+    /* Prevents page shell filtering while modal is active */
+    body.modal-open .page-shell {
+        filter: none !important;
+    }
+
+    /* Controls modal backdrop opacity */
+    .modal-backdrop.show {
+        opacity: 0.5;
+    }
+
+    /* Main page header layout */
+    .category-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Summary card styling */
+    .summary-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 28px;
+        padding: 28px 24px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        border: 1px solid #f1f3f5;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-height: 132px;
+        transition: all 0.25s ease;
+    }
+
+        /* Hover effect for summary cards */
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+        }
+
+    /* Icon container inside summary cards */
+    .summary-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    /* Summary card label text */
+    .summary-label {
+        font-size: 1.05rem;
+        color: #6b7280;
+        margin-bottom: 6px;
+    }
+
+    /* Summary card numeric value */
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        color: #1f2937;
+    }
+
+    /* Shared insight card styling */
+    .insight-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 24px;
+        border: 1px solid #eef1f6;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Filter panel container */
+    .filter-shell {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 24px;
+        border: 1px solid #eef1f6;
+    }
+
+    /* Filter field labels */
+    .filter-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    /* Shared styles for filter inputs and selects */
+    .filter-input,
+    .filter-select {
+        border-radius: 14px;
+        min-height: 50px;
+        border: 1px solid #e5e7eb;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+    }
+
+        /* Focus state for filter controls */
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: #0d6efd;
+        }
+
+    /* Wrapper for active filter chips */
+    .filter-chip-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Individual filter chip styling */
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+        /* Explicit hidden state for chips */
+        .filter-chip.d-none {
+            display: none !important;
+        }
+
+    /* Main category table card */
+    .categories-table-card {
+        border-radius: 24px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border: 1px solid #eef1f6;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Base table spacing */
+    .categories-table {
+        margin-bottom: 0;
+    }
+
+        /* Vertical alignment for table cells */
+        .categories-table th,
+        .categories-table td {
+            vertical-align: middle;
+        }
+
+        /* Smooth transition for table rows */
+        .categories-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+            /* Zebra striping for even rows */
+            .categories-table tbody tr:nth-child(even) {
+                background: rgba(0, 0, 0, 0.015);
+            }
+
+            /* Hover highlight for rows */
+            .categories-table tbody tr:hover {
+                background-color: rgba(13, 110, 253, 0.03);
+            }
+
+    /* Highlight for categories linked to tasks */
+    .category-linked-row {
+        border-left: 4px solid #0d6efd;
+        background: rgba(13, 110, 253, 0.04);
+    }
+
+    /* Highlight for passive categories */
+    .category-passive-row {
+        border-left: 4px solid #6c757d;
+        background: rgba(108, 117, 125, 0.04);
+    }
+
+    /* Default row appearance */
+    .category-row-normal {
+        border-left: 4px solid transparent;
+    }
+
+    /* Layout for category name and color dot */
+    .category-name-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Small color indicator dot */
+    .category-color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Category name text style */
+    .category-name {
+        font-weight: 700;
+        color: #1f2937;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Badge shown for linked categories */
+    .category-linked-badge {
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #e0e7ff;
+    }
+
+    /* Color badge styling */
+    .category-color-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* Status toggle container */
+    .status-toggle-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fa;
+        border: 1px solid #eef1f6;
+        padding: 8px 14px;
+        border-radius: 999px;
+    }
+
+    /* Status label text */
+    .status-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+        min-width: 58px;
+    }
+
+    /* Custom size for status toggle switch */
+    .form-check-input.toggle {
+        width: 2.7rem;
+        height: 1.35rem;
+        cursor: pointer;
+    }
+
+        /* Active state for custom toggle switch */
+        .form-check-input.toggle:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+    /* Temporary visual state while toggle request is processing */
+    .toggle-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    /* Shared action button styling */
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for action buttons */
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        }
+
+    /* Empty state container */
+    .empty-state {
+        border: 1px dashed #dbe3f0;
+        background: #fff;
+        border-radius: 20px;
+        padding: 56px 24px;
+        text-align: center;
+    }
+
+    /* Scrollable preview area for linked tasks */
+    .task-preview {
+        max-height: 140px;
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    /* Individual task preview item */
+    .task-item {
+        padding: 8px 10px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+        /* Hover effect for task preview items */
+        .task-item:hover {
+            background: rgba(0,0,0,0.05);
+            transform: translateX(3px);
+        }
+
+    /* Main destructive action button */
+    .delete-all {
+        background: #111827;
+        border: none;
+    }
+
+        /* Hover state for destructive action button */
+        .delete-all:hover {
+            background: #030712;
+            transform: translateY(-1px);
+        }
+
+    /* Delete only category button style */
+    #deleteOnlyCategory {
+        background: #dc3545;
+        border: none;
+    }
+
+        /* Hover state for delete only category button */
+        #deleteOnlyCategory:hover {
+            background: #b02a37;
+        }
+
+    /* Small AI hint cards */
+    .category-ai-card {
+        border: 1px solid #eef1f6;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        border-radius: 20px;
+    }
+
+    /* Mobile layout adjustments */
+    @@media (max-width: 767.98px) {
+        .category-page-header {
+            align-items: stretch;
+        }
+
+            .category-page-header .btn {
+                width: 100%;
+            }
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Top page header -->
+    <div class="category-page-header">
+        <div>
+            <h2 class="fw-bold mb-1">Categories</h2>
+            <p class="text-muted small mb-0">Manage your categories with filters, smart summary, and quick actions.</p>
+        </div>
+
+        <!-- Navigation button to category creation page -->
+        <a asp-action="Create" class="btn btn-dark rounded-4 px-4 py-2">
+            <i class="bi bi-plus-lg me-2"></i>New Category
+        </a>
+    </div>
+
+    <!-- Success message area -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <!-- Informational cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+            <div class="category-ai-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-1">Simple Smart Hint</h5>
+                        <p class="text-muted small mb-0">
+                            Category names like <strong>work</strong>, <strong>personal</strong>, <strong>study</strong>, or <strong>urgent</strong>
+                            can automatically suggest a color.
+                        </p>
+                    </div>
+                    <span class="badge rounded-pill bg-dark text-white px-3 py-2">Light AI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="category-ai-card p-4 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small mb-1">Usage Rule</div>
+                    <div class="fw-semibold">Linked and active categories are highlighted first.</div>
+                </div>
+                <i class="bi bi-stars fs-3 text-warning"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insight and usage summary section -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="insight-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-1">Category Insight</h5>
+                        <p class="text-muted small mb-0" id="categoryInsightText">@insightText</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge rounded-pill bg-dark text-white px-3 py-2" id="linkedCategoriesBadge">
+                            Linked: @linkedCount
+                        </span>
+                        <span class="badge rounded-pill bg-light text-dark border px-3 py-2" id="unusedCategoriesBadge">
+                            Unused: @unusedCount
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="insight-card p-4 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small mb-1">Most Used</div>
+                    <div class="fw-semibold" id="mostUsedCategoryText">Loading...</div>
+                </div>
+                <i class="bi bi-bar-chart-line fs-3 text-primary"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary counters -->
+    <div class="row g-3 mb-4 summary-cards">
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-icon text-primary">
+                    <i class="bi bi-grid-1x2"></i>
+                </div>
+                <div>
+                    <div class="summary-label">Total Categories</div>
+                    <div class="summary-value" id="totalCategoriesCount">@total</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-icon text-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="summary-label">Active Categories</div>
+                    <div class="summary-value" id="activeCategoriesCount">@active</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="summary-card">
+                <div class="summary-icon text-warning">
+                    <i class="bi bi-pause-circle"></i>
+                </div>
+                <div>
+                    <div class="summary-label">Passive Categories</div>
+                    <div class="summary-value" id="passiveCategoriesCount">@passive</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h6 class="fw-semibold mb-0">Filters</h6>
+        <button id="reset" class="btn btn-light border rounded-3 px-4">Reset</button>
+    </div>
+
+    <!-- Filter controls -->
+    <div class="filter-shell p-4 shadow-sm mb-3">
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <label class="filter-label">Search</label>
+                <input id="search" class="form-control filter-input" placeholder="Search category..." />
+            </div>
+
+            <div class="col-lg-3">
+                <label class="filter-label">Status</label>
+                <select id="status" class="form-select filter-select">
+                    <option value="All" selected="@(initialStatus == "All")">All</option>
+                    <option value="Active" selected="@(initialStatus == "Active")">Active</option>
+                    <option value="Passive" selected="@(initialStatus == "Passive")">Passive</option>
+                </select>
+            </div>
+
+            <div class="col-lg-4">
+                <label class="filter-label">Linked Filter</label>
+                <select id="linkedFilter" class="form-select filter-select">
+                    <option value="All" selected="@(!initialLinkedOnly)">All Categories</option>
+                    <option value="Linked" selected="@(initialLinkedOnly)">Only Linked</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active filter chips -->
+    <div class="filter-chip-wrap mb-4">
+        <div class="filter-chip d-none" id="searchChip">
+            <i class="bi bi-search"></i>
+            <span id="searchChipText"></span>
+        </div>
+
+        <div class="filter-chip d-none" id="statusChip">
+            <i class="bi bi-funnel"></i>
+            <span id="statusChipText"></span>
+        </div>
+
+        <div class="filter-chip d-none" id="linkedChip">
+            <i class="bi bi-link-45deg"></i>
+            <span id="linkedChipText"></span>
+        </div>
+    </div>
+
+    <!-- Categories table -->
+    <div class="categories-table-card">
+        <div class="table-responsive">
+            <table class="table align-middle categories-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Category</th>
+                        <th>Color</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody">
+                    @foreach (var item in Model)
+                    {
+                        // Fallback color if the category color is missing
+                        var color = string.IsNullOrWhiteSpace(item.Color) ? "#ccc" : item.Color;
+
+                        // Checks whether the category is linked to at least one task
+                        var hasTasks = linkedCategoryIds.Contains(item.Id);
+
+                        // Determines row styling based on linked and active state
+                        var rowClass = hasTasks
+                        ? "category-linked-row"
+                        : !item.IsActive
+                        ? "category-passive-row"
+                        : "category-row-normal";
+
+                        <tr class="@rowClass"
+                            data-name="@item.Name.ToLower()"
+                            data-status="@(item.IsActive ? "Active" : "Passive")"
+                            data-linked="@(hasTasks.ToString().ToLower())">
+
+                            <td class="ps-4">
+                                <div class="category-name-wrap">
+                                    <div class="category-color-dot" style="background:@color"></div>
+                                    <div>
+                                        <div class="category-name">@item.Name</div>
+                                        @if (hasTasks)
+                                        {
+                                            <div class="mt-1">
+                                                <span class="category-linked-badge">Linked to task(s)</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="category-color-badge" style="background:@color">
+                                    <i class="bi bi-palette"></i>
+                                    @color
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="status-toggle-wrap">
+                                    <div class="form-check form-switch m-0">
+                                        <!-- Toggle switch used for AJAX-based status updates -->
+                                        <input class="form-check-input toggle"
+                                               type="checkbox"
+                                               data-id="@item.Id"
+                                               @(item.IsActive ? "checked" : "") />
+                                    </div>
+
+                                    <span class="status-text @(item.IsActive ? "text-success" : "text-secondary")">
+                                        @(item.IsActive ? "Active" : "Passive")
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <!-- Edit category action -->
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-light border action-btn"
+                                       title="Edit Category">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <!-- Opens delete modal for the selected category -->
+                                    <button class="btn btn-sm btn-light border text-danger action-btn openDelete"
+                                            data-id="@item.Id"
+                                            data-name="@item.Name"
+                                            title="Delete Category">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Empty state shown when no rows match current filters -->
+            <div id="emptyState" class="p-4 d-none">
+                <div class="empty-state">
+                    <div class="fs-4 mb-2"><i class="bi bi-folder-x"></i></div>
+                    <div class="fw-semibold mb-2">No matching categories</div>
+                    <div class="text-muted small mb-3">Try changing your filters or create a new category.</div>
+                    <a asp-action="Create" class="btn btn-dark rounded-3 px-4">
+                        Create Category
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form used to expose anti-forgery token for AJAX requests -->
+<form id="antiForgeryForm" method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 rounded-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">Delete Category</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <p class="text-muted mb-3">
+                Please review the details before deleting.
+            </p>
+
+            <div class="mb-3">
+                <small class="text-muted">Selected Category</small>
+                <h5 id="catName" class="fw-semibold"></h5>
+            </div>
+
+            <!-- Linked task preview shown before deletion -->
+            <div class="border rounded-3 p-3 mb-3 task-box">
+                <div class="fw-semibold mb-2">
+                    <i class="bi bi-list-task me-2"></i>
+                    <span id="taskCount"></span>
+                </div>
+
+                <div id="taskList" class="task-preview"></div>
+            </div>
+
+            <div class="bg-light rounded-3 p-3 mb-4 small text-muted">
+                This action is permanent and cannot be undone.
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                <button class="btn btn-light px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <!-- Deletes the selected category together with its tasks -->
+                <button id="deleteWithTasks" class="btn btn-dark px-4 delete-all">
+                    Delete with Tasks
+                </button>
+
+                <!-- Deletes only the selected category -->
+                <button id="deleteOnlyCategory" class="btn btn-danger px-4">
+                    Delete Category
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initializes all category page interactions after the DOM is ready
+        document.addEventListener("DOMContentLoaded", function () {
+            // Reads the anti-forgery token used for secure POST requests
+            const antiForgeryToken =
+                document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+
+            // Tracks whether the linked-only filter is currently active
+            let linkedOnlyActive = @initialLinkedOnly.ToString().ToLower();
+
+            // Summary DOM references
+            const totalCategoriesCount = document.getElementById("totalCategoriesCount");
+            const activeCategoriesCount = document.getElementById("activeCategoriesCount");
+            const passiveCategoriesCount = document.getElementById("passiveCategoriesCount");
+            const categoryInsightText = document.getElementById("categoryInsightText");
+            const linkedCategoriesBadge = document.getElementById("linkedCategoriesBadge");
+            const unusedCategoriesBadge = document.getElementById("unusedCategoriesBadge");
+            const mostUsedCategoryText = document.getElementById("mostUsedCategoryText");
+
+            // Active filter chip DOM references
+            const searchChip = document.getElementById("searchChip");
+            const statusChip = document.getElementById("statusChip");
+            const linkedChip = document.getElementById("linkedChip");
+            const searchChipText = document.getElementById("searchChipText");
+            const statusChipText = document.getElementById("statusChipText");
+            const linkedChipText = document.getElementById("linkedChipText");
+            const emptyState = document.getElementById("emptyState");
+
+            // Filter control DOM references
+            const searchInput = document.getElementById("search");
+            const statusSelect = document.getElementById("status");
+            const linkedSelect = document.getElementById("linkedFilter");
+
+            // Stores the currently selected category ID for deletion
+            let deleteId = 0;
+
+            // Holds the Bootstrap modal instance
+            let deleteModalInstance = null;
+
+            // Displays a temporary alert message inside the page container
+            function showAlert(message, type = "success") {
+                const container = document.querySelector(".container");
+
+                // Removes previous dynamic alerts before showing a new one
+                const oldAlerts = container.querySelectorAll(".dynamic-alert");
+                oldAlerts.forEach(x => x.remove());
+
+                const alert = document.createElement("div");
+                alert.className = `alert alert-${type} border-0 shadow-sm rounded-4 mb-4 dynamic-alert`;
+                alert.innerText = message;
+
+                container.insertBefore(alert, container.children[1]);
+
+                setTimeout(() => {
+                    alert.remove();
+                }, 3000);
+            }
+
+            // Displays a temporary toast notification
+            function showToast(message) {
+                const div = document.createElement("div");
+                div.className = "position-fixed bottom-0 end-0 p-3";
+                div.style.zIndex = "9999";
+
+                div.innerHTML = `
+                    <div class="toast show align-items-center text-bg-dark border-0">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(div);
+                setTimeout(() => div.remove(), 2000);
+            }
+
+            // Updates the visible filter chips according to current filter values
+            function updateFilterChips() {
+                const searchValue = searchInput.value.trim();
+                const statusValue = statusSelect.value;
+                const linkedValue = linkedSelect.value;
+
+                if (searchValue) {
+                    searchChip.classList.remove("d-none");
+                    searchChipText.textContent = `Search: ${searchValue}`;
+                } else {
+                    searchChip.classList.add("d-none");
+                }
+
+                if (statusValue !== "All") {
+                    statusChip.classList.remove("d-none");
+                    statusChipText.textContent = `Status: ${statusValue}`;
+                } else {
+                    statusChip.classList.add("d-none");
+                }
+
+                if (linkedValue === "Linked") {
+                    linkedChip.classList.remove("d-none");
+                    linkedChipText.textContent = "Only linked categories";
+                } else {
+                    linkedChip.classList.add("d-none");
+                }
+            }
+
+            // Requests updated category summary data from the server
+            async function updateCategorySummary() {
+                try {
+                    const response = await fetch("/Category/GetCategorySummary", {
+                        method: "GET",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Summary request failed.");
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        return;
+                    }
+
+                    // Updates summary values and insight texts in the UI
+                    if (totalCategoriesCount) totalCategoriesCount.textContent = data.total;
+                    if (activeCategoriesCount) activeCategoriesCount.textContent = data.active;
+                    if (passiveCategoriesCount) passiveCategoriesCount.textContent = data.passive;
+                    if (categoryInsightText) categoryInsightText.textContent = data.insightText;
+                    if (linkedCategoriesBadge) linkedCategoriesBadge.textContent = `Linked: ${data.linked}`;
+                    if (unusedCategoriesBadge) unusedCategoriesBadge.textContent = `Unused: ${data.unused}`;
+                    if (mostUsedCategoryText) {
+                        mostUsedCategoryText.textContent = `${data.mostUsedCategory} (${data.mostUsedCategoryCount})`;
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            // Recalculates visible summary values based on filtered rows
+            function updateVisibleSummary() {
+                const visibleRows = Array.from(document.querySelectorAll("#tableBody tr"))
+                    .filter(row => row.style.display !== "none");
+
+                const total = visibleRows.length;
+                const active = visibleRows.filter(x => x.dataset.status === "Active").length;
+                const passive = visibleRows.filter(x => x.dataset.status === "Passive").length;
+
+                if (totalCategoriesCount) totalCategoriesCount.textContent = total;
+                if (activeCategoriesCount) activeCategoriesCount.textContent = active;
+                if (passiveCategoriesCount) passiveCategoriesCount.textContent = passive;
+
+                // Toggles the empty state when no category matches the filters
+                if (emptyState) {
+                    emptyState.classList.toggle("d-none", total !== 0);
+                }
+            }
+
+            // Applies search, status, and linked filters to the table rows
+            function filter() {
+                const s = searchInput.value.toLowerCase().trim();
+                const st = statusSelect.value;
+                const linkedMode = linkedSelect.value;
+
+                linkedOnlyActive = linkedMode === "Linked";
+
+                document.querySelectorAll("#tableBody tr").forEach(row => {
+                    const name = row.dataset.name || "";
+                    const rStatus = row.dataset.status || "";
+                    const linked = row.dataset.linked === "true";
+
+                    const matchSearch = name.includes(s);
+                    const matchStatus = st === "All" || rStatus === st;
+                    const matchLinked = !linkedOnlyActive || linked;
+
+                    row.style.display = (matchSearch && matchStatus && matchLinked) ? "" : "none";
+                });
+
+                updateFilterChips();
+                updateVisibleSummary();
+            }
+
+            // Restores the initial search value coming from the server
+            searchInput.value = "@initialSearch";
+
+            // Live filter bindings
+            searchInput.addEventListener("input", filter);
+            statusSelect.addEventListener("change", filter);
+            linkedSelect.addEventListener("change", filter);
+
+            // Resets all filters and refreshes the summary
+            document.getElementById("reset").addEventListener("click", async () => {
+                searchInput.value = "";
+                statusSelect.value = "All";
+                linkedSelect.value = "All";
+                linkedOnlyActive = false;
+                filter();
+                await updateCategorySummary();
+            });
+
+            // AJAX status toggle logic for each category row
+            document.querySelectorAll(".toggle").forEach(el => {
+                el.addEventListener("change", async function () {
+                    const toggle = this;
+                    toggle.classList.add("toggle-loading");
+                    toggle.disabled = true;
+
+                    const response = await fetch("/Category/ToggleStatusAjax?id=" + this.dataset.id, {
+                        method: "POST",
+                        headers: {
+                            "RequestVerificationToken": antiForgeryToken
+                        }
+                    });
+
+                    if (!response.ok) {
+                        toggle.classList.remove("toggle-loading");
+                        toggle.disabled = false;
+                        showAlert("Status update failed.", "danger");
+                        return;
+                    }
+
+                    const result = await response.json();
+
+                    const wrapper = this.closest("td");
+                    const textEl = wrapper.querySelector(".status-text");
+
+                    // Updates visible status text
+                    if (textEl) {
+                        textEl.textContent = result.statusText;
+                        textEl.classList.remove("text-success", "text-secondary");
+                        textEl.classList.add(result.isActive ? "text-success" : "text-secondary");
+                    }
+
+                    const row = this.closest("tr");
+                    if (row) {
+                        row.dataset.status = result.statusText;
+
+                        // Refreshes row visual state after the status update
+                        row.classList.remove("category-linked-row", "category-passive-row", "category-row-normal");
+
+                        const isLinked = row.dataset.linked === "true";
+
+                        if (isLinked) {
+                            row.classList.add("category-linked-row");
+                        } else if (!result.isActive) {
+                            row.classList.add("category-passive-row");
+                        } else {
+                            row.classList.add("category-row-normal");
+                        }
+                    }
+
+                    toggle.classList.remove("toggle-loading");
+                    toggle.disabled = false;
+                    filter();
+                    await updateCategorySummary();
+                    showToast("Category updated");
+                });
+            });
+
+            // Opens the delete modal and loads linked task information
+            document.querySelectorAll(".openDelete").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    deleteId = this.dataset.id;
+                    document.getElementById("catName").innerText = this.dataset.name;
+
+                    fetch("/Category/GetCategoryTasks?id=" + deleteId)
+                        .then(res => res.json())
+                        .then(data => {
+                            const list = document.getElementById("taskList");
+                            const count = document.getElementById("taskCount");
+
+                            if (data.length === 0) {
+                                count.innerText = "No linked tasks";
+                                list.innerHTML = `<div class="small text-muted">This category is not linked to any task.</div>`;
+                            } else {
+                                count.innerText = `${data.length} linked task${data.length > 1 ? "s" : ""}`;
+                                list.innerHTML = data.map(x => `<div class="task-item">• ${x.title}</div>`).join("");
+                            }
+                        });
+
+                    deleteModalInstance = new bootstrap.Modal(document.getElementById("deleteModal"));
+                    deleteModalInstance.show();
+                });
+            });
+
+            // Deletes only the selected category
+            document.getElementById("deleteOnlyCategory").addEventListener("click", async function () {
+                const response = await fetch("/Category/DeleteAjax", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": antiForgeryToken
+                    },
+                    body: JSON.stringify({
+                        id: deleteId,
+                        deleteTasks: false
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+
+                    deleteModalInstance.hide();
+
+                    // Removes the deleted row from the table
+                    document.querySelectorAll(".openDelete").forEach(btn => {
+                        if (btn.dataset.id == deleteId) {
+                            btn.closest("tr").remove();
+                        }
+                    });
+
+                    filter();
+                    await updateCategorySummary();
+                    showToast(result.message || "Category deleted successfully.");
+                } else {
+                    showAlert("Delete operation failed.", "danger");
+                }
+            });
+
+            // Deletes the selected category together with its linked tasks
+            document.getElementById("deleteWithTasks").addEventListener("click", async function () {
+                const response = await fetch("/Category/DeleteAjax", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": antiForgeryToken
+                    },
+                    body: JSON.stringify({
+                        id: deleteId,
+                        deleteTasks: true
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+
+                    deleteModalInstance.hide();
+
+                    // Removes the deleted row from the table
+                    document.querySelectorAll(".openDelete").forEach(btn => {
+                        if (btn.dataset.id == deleteId) {
+                            btn.closest("tr").remove();
+                        }
+                    });
+
+                    filter();
+                    await updateCategorySummary();
+                    showToast(result.message || "Category deleted successfully.");
+                } else {
+                    showAlert("Delete operation failed.", "danger");
+                }
+            });
+
+            // Applies initial filter state and loads live summary on page load
+            filter();
+            updateCategorySummary();
+        });
+    </script>
+}

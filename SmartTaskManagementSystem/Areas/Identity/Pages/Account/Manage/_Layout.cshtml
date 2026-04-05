@@ -1,0 +1,271 @@
+﻿@{
+    // Main layout used for authenticated pages
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Main container for manage/account pages */
+    .manage-page {
+        padding: 2rem 0 3rem;
+    }
+
+    /* Top hero section (header banner) */
+    .manage-hero {
+        background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 55%, #20c997 100%);
+        color: #fff;
+        border-radius: 28px;
+        padding: 2rem 2rem;
+        margin-bottom: 1.75rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+    }
+
+        /* Decorative background elements */
+        .manage-hero::before,
+        .manage-hero::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.10);
+        }
+
+        .manage-hero::before {
+            width: 180px;
+            height: 180px;
+            top: -45px;
+            right: -35px;
+        }
+
+        .manage-hero::after {
+            width: 110px;
+            height: 110px;
+            left: -20px;
+            bottom: -25px;
+        }
+
+        /* Ensure content is above decorative elements */
+        .manage-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    /* Badge displayed in hero section */
+    .manage-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.16);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(6px);
+    }
+
+    /* Main page title */
+    .manage-title {
+        font-size: 2.6rem;
+        font-weight: 800;
+        margin-bottom: 0.4rem;
+        color: #fff;
+    }
+
+    /* Subtitle text under title */
+    .manage-subtitle {
+        font-size: 1.05rem;
+        color: rgba(255,255,255,0.88);
+        margin-bottom: 0;
+        max-width: 720px;
+    }
+
+    /* Main container wrapping sidebar + content */
+    .manage-shell {
+        background: #fff;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+    }
+
+    /* Sidebar section (left navigation) */
+    .manage-sidebar {
+        background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+        border-right: 1px solid #eef1f6;
+        padding: 1.5rem;
+        min-height: 100%;
+        height: 100%;
+    }
+
+    /* Sidebar card container */
+    .manage-sidebar-card {
+        background: #fff;
+        border: 1px solid #eef1f6;
+        border-radius: 24px;
+        padding: 1rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    /* Main content area */
+    .manage-content {
+        background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        padding: 2rem;
+        min-height: 100%;
+        height: 100%;
+    }
+
+    /* Inner content wrapper (centered layout) */
+    .manage-content-inner {
+        max-width: 960px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    /* Card component for sections */
+    .manage-card {
+        border-radius: 24px;
+        background: #fff;
+        border: 1px solid #eef1f6;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        padding: 1.5rem;
+    }
+
+    /* Card title styling */
+    .manage-card-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    /* Informational text */
+    .manage-note {
+        color: #6b7280;
+        margin-bottom: 1rem;
+    }
+
+    /* Danger/alert styled container */
+    .manage-danger {
+        border: 1px solid #fee2e2;
+        background: #fff7f7;
+    }
+
+    /* Input and select fields */
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        min-height: 58px;
+        box-shadow: none !important;
+        background-color: #fff !important;
+    }
+
+        /* Focus state for inputs */
+        .form-floating > .form-control:focus,
+        .form-floating > .form-select:focus {
+            border-color: #0d6efd;
+        }
+
+    /* Primary button styling */
+    .manage-btn {
+        min-height: 54px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    /* Validation states */
+    .validation-summary-valid {
+        display: none;
+    }
+
+    .validation-summary-errors ul {
+        margin-bottom: 0;
+        padding-left: 1rem;
+    }
+
+    .field-validation-error {
+        display: block;
+        margin-top: 6px;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 991.98px) {
+        .manage-page {
+            padding: 1.5rem 0 2rem;
+        }
+
+        .manage-title {
+            font-size: 2rem;
+        }
+
+        .manage-shell,
+        .manage-hero {
+            border-radius: 22px;
+        }
+
+        .manage-sidebar,
+        .manage-content {
+            padding: 1.25rem;
+        }
+
+        .manage-sidebar {
+            border-right: 0;
+            border-bottom: 1px solid #eef1f6;
+        }
+
+        .manage-content-inner {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<div class="container manage-page">
+
+    <!-- HERO SECTION: Page introduction -->
+    <div class="manage-hero">
+        <div class="manage-badge">
+            <i class="bi bi-shield-check"></i>
+            Account Center
+        </div>
+
+        <h1 class="manage-title">Manage your account</h1>
+        <p class="manage-subtitle">
+            Update your profile, email, password and security settings in one clean workspace.
+        </p>
+    </div>
+
+    <!-- MAIN LAYOUT: Sidebar + Content -->
+    <div class="manage-shell">
+        <div class="row g-0">
+
+            <!-- SIDEBAR: Navigation menu -->
+            <div class="col-lg-3">
+                <aside class="manage-sidebar">
+                    <div class="manage-sidebar-card">
+                        <partial name="_ManageNav" />
+                    </div>
+                </aside>
+            </div>
+
+            <!-- CONTENT AREA -->
+            <div class="col-lg-9">
+                <main class="manage-content">
+                    <div class="manage-content-inner">
+
+                        <!-- Dynamic page content -->
+                        @RenderBody()
+
+                    </div>
+                </main>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        // Allows child pages to inject scripts
+    @RenderSection("Scripts", required: false)
+}
