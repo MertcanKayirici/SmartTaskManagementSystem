@@ -7,13 +7,17 @@ out/
 publish/
 
 # =========================
+# Solution (KEEP THIS)
+# =========================
+!*.sln
+
+# =========================
 # Visual Studio
 # =========================
 .vs/
 *.user
 *.suo
 *.userosscache
-*.sln.docstates
 
 # =========================
 # Rider / VS Code
@@ -34,33 +38,27 @@ logs/
 Thumbs.db
 
 # =========================
-# ASP.NET Core
+# ASP.NET Core Config
 # =========================
 appsettings.Development.json
 appsettings.Local.json
-
-# (Optional) Eğer prod config saklamak istemiyorsan
-# appsettings.json
+# appsettings.json (opsiyonel)
 
 # =========================
-# Entity Framework
+# Database Files
 # =========================
 *.db
 *.sqlite
-
-# =========================
-# SQL Server LocalDB
-# =========================
 *.mdf
 *.ldf
 
 # =========================
-# Node Modules (eğer frontend tool varsa)
+# Node Modules
 # =========================
 node_modules/
 
 # =========================
-# wwwroot uploads (isteğe bağlı)
+# Uploads (User Files Only)
 # =========================
 wwwroot/uploads/
 
