@@ -19,7 +19,7 @@ The database is designed to support:
 
 Below is the relational database structure:
 
-![Database Diagram](database_diagram.png)
+![Database Diagram](database_diagram_v2.png)
 
 ---
 
