@@ -1,9 +1,6 @@
 ﻿@page
 @using SmartTaskManagementSystem.Areas.Identity.Pages.Account.Manage
-// Imports Manage namespace for navigation helpers (e.g., ManageNavPages)
-
 @model EmailModel
-// Binds the Razor Page to EmailModel (code-behind)
 
 @{
     // Page title shown in browser tab
@@ -259,8 +256,6 @@
                 <input asp-for="Email" class="form-control" disabled />
                 <label asp-for="Email">Current Email</label>
             </div>
-
-            // Show verification button if email is not confirmed
             @if (!Model.IsEmailConfirmed)
             {
                 <button id="email-verification"
